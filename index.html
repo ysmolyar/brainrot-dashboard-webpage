@@ -164,21 +164,31 @@
     /* Sticky column styles */
     .sticky-col {
       position: sticky;
-      left: 0;
-      background: #1A202C;
-      z-index: 1;
-      padding-left: 20px;
+      left: -20px;
+      background: #1A202C !important;
+      z-index: 2;
+      padding-left: 40px;
       padding-right: 20px;
-      box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+      box-shadow: 2px 0 4px rgba(0,0,0,0.3);
       min-width: 160px;
+    }
+
+    th.sticky-col,
+    td.sticky-col {
+      background: #1A202C !important;
     }
 
     @media (max-width: 600px) {
       .sticky-col {
         min-width: 120px;
-        padding-left: 8px;
+        padding-left: 28px;
         padding-right: 8px;
-        left: 0;
+        left: -20px;
+      }
+      #transactions-table {
+        transform: scale(0.75);
+        transform-origin: top left;
+        width: 133.33%;
       }
     }
 
@@ -350,9 +360,8 @@
 
     <!-- Recent Transactions Section -->
     <div class="chart-container" style="background: #1A202C; padding: 24px; margin-top: 16px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <div style="margin-bottom: 20px;">
         <h2 style="font-size: 1rem; color: white; font-weight: 500;">Recent Transactions</h2>
-        <span style="font-size: 0.75rem; color: #6B7280; cursor: pointer;">Main Events</span>
       </div>
       <div style="overflow-x: auto;">
         <table id="transactions-table" style="width: 100%; border-collapse: collapse;">
