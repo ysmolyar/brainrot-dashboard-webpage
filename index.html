@@ -164,24 +164,21 @@
     /* Sticky column styles */
     .sticky-col {
       position: sticky;
-      left: -20px;
+      left: 0;
       background: #1A202C;
       z-index: 1;
-      padding-left: 40px;
-      padding-right: 40px;
-      margin-left: -20px;
+      padding-left: 20px;
+      padding-right: 20px;
       box-shadow: 2px 0 4px rgba(0,0,0,0.1);
-      width: 180px;
-      display: block;
+      min-width: 160px;
     }
 
     @media (max-width: 600px) {
       .sticky-col {
-        width: 140px;
-        padding-left: 28px;
-        padding-right: 20px;
-        left: -20px;
-        margin-left: -20px;
+        min-width: 120px;
+        padding-left: 8px;
+        padding-right: 8px;
+        left: 0;
       }
     }
 
