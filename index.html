@@ -635,13 +635,34 @@
       };
 
       try {
-        const [adsRes, revRes] = await Promise.all([
-          fetch(`${SUPABASE_URL}/rest/v1/meta_ads_hourly?select=hour_utc,spend`, { headers }),
-          fetch(`${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type,user_id,product_id,is_refund,raw_payload`, { headers }),
-        ]);
-
+        // Fetch ads data
+        const adsRes = await fetch(`${SUPABASE_URL}/rest/v1/meta_ads_hourly?select=hour_utc,spend&order=hour_utc.asc`, { headers });
         adsData = await adsRes.json();
-        revenueData = await revRes.json();
+
+        // Fetch revenue data with pagination (Supabase limits to 1000 per request)
+        const fetchAllRevenue = async () => {
+          let allData = [];
+          let offset = 0;
+          const limit = 1000;
+
+          while (true) {
+            const res = await fetch(
+              `${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type,user_id,product_id,is_refund,raw_payload&order=created_at.asc&limit=${limit}&offset=${offset}`,
+              { headers }
+            );
+            const data = await res.json();
+            allData = allData.concat(data);
+
+            if (data.length < limit) break; // No more data
+            offset += limit;
+          }
+          return allData;
+        };
+
+        revenueData = await fetchAllRevenue();
+
+        console.log('Ads data rows fetched:', adsData.length);
+        console.log('Revenue data rows fetched:', revenueData.length);
 
         // Save to cache
         const cacheData = {
