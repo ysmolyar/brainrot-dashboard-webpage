@@ -46,12 +46,20 @@
       .container { padding: 0; }
     }
     header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+    .main-header { position: relative; }
+    .header-icon { position: absolute; left: 0; top: 50%; transform: translateY(-50%); }
+    .header-title { position: absolute; left: 50%; transform: translateX(-50%); text-align: center; }
+    .main-header .controls { margin-left: auto; }
     h1 { font-size: 1.5rem; }
     .updated { font-size: 0.75rem; color: #6B7280; }
     .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
     @media (max-width: 600px) {
       header { gap: 8px; margin-bottom: 12px; }
+      .main-header { flex-wrap: wrap; padding-top: 50px; }
+      .header-icon { position: absolute; left: 0; top: 0; transform: none; }
+      .header-title { position: absolute; left: 50%; top: 0; transform: translateX(-50%); }
+      .main-header .controls { width: 100%; justify-content: center; }
       h1 { font-size: 1.25rem; }
       .controls { width: 100%; justify-content: flex-end; }
       button, select {
@@ -186,9 +194,7 @@
         left: -20px;
       }
       #transactions-table {
-        transform: scale(0.75);
-        transform-origin: top left;
-        width: 133.33%;
+        zoom: 0.7;
       }
     }
 
@@ -231,12 +237,10 @@
 </head>
 <body>
   <div class="container">
-    <header>
-      <div>
-        <h1 style="display: flex; align-items: center; gap: 8px;">
-          <img src="brainrot-icon.png" alt="Brainrot" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover;">
-          Brainrot
-        </h1>
+    <header class="main-header">
+      <img src="brainrot-icon.png" alt="Brainrot" class="header-icon" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover;">
+      <div class="header-title">
+        <h1>Brainrot</h1>
         <div class="updated" id="updated"></div>
       </div>
       <div class="controls">
@@ -270,6 +274,10 @@
         <div class="card-label">Total Proceeds</div>
       </div>
       <div class="card">
+        <div class="card-value" id="total-spend" style="color: white;">$0</div>
+        <div class="card-label">Ad Spend</div>
+      </div>
+      <div class="card">
         <div class="card-value" id="total-conversions" style="color: white;">0</div>
         <div class="card-label">Total Conv's</div>
       </div>
@@ -278,16 +286,12 @@
         <div class="card-label">Initial Conv's</div>
       </div>
       <div class="card">
-        <div class="card-value" id="total-spend" style="color: white;">$0</div>
-        <div class="card-label">Ad Spend</div>
+        <div class="card-value" id="net-profit" style="color: white;">$0</div>
+        <div class="card-label">Net Profit</div>
       </div>
       <div class="card">
         <div class="card-value" id="roas" style="color: white;">0.00</div>
         <div class="card-label">ROAS</div>
-      </div>
-      <div class="card">
-        <div class="card-value" id="net-profit" style="color: white;">$0</div>
-        <div class="card-label">Net Profit</div>
       </div>
     </div>
 
@@ -363,7 +367,7 @@
       <div style="margin-bottom: 20px;">
         <h2 style="font-size: 1rem; color: white; font-weight: 500;">Recent Transactions</h2>
       </div>
-      <div style="overflow-x: auto;">
+      <div class="transactions-wrapper" style="overflow-x: auto;">
         <table id="transactions-table" style="width: 100%; border-collapse: collapse;">
           <thead>
             <tr>
@@ -646,6 +650,17 @@
       const showNew = document.getElementById('toggle-new').checked;
       const showRenewal = document.getElementById('toggle-renewal').checked;
       const showSpend = document.getElementById('toggle-spend').checked;
+
+      // Grey out row numbers when deselected
+      document.querySelectorAll('#new-row td:not(.sticky-col)').forEach(td => {
+        td.style.color = showNew ? 'white' : '#6B7280';
+      });
+      document.querySelectorAll('#renewal-row td:not(.sticky-col)').forEach(td => {
+        td.style.color = showRenewal ? 'white' : '#6B7280';
+      });
+      document.querySelectorAll('#spend-row td:not(.sticky-col)').forEach(td => {
+        td.style.color = showSpend ? 'white' : '#6B7280';
+      });
 
       const labels = processedData.map(d => formatLabel(d.bucket));
       const datasets = [];
