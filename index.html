@@ -1244,6 +1244,15 @@
           },
         },
       });
+
+      // Hide tooltip when touching outside the chart on mobile
+      document.addEventListener('touchstart', function(e) {
+        const chartCanvas = document.getElementById('chart');
+        const tooltipEl = document.getElementById('chartjs-tooltip');
+        if (tooltipEl && !chartCanvas.contains(e.target)) {
+          tooltipEl.style.opacity = 0;
+        }
+      }, { passive: true });
     }
 
     function updateTable() {
