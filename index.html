@@ -1660,19 +1660,36 @@
 
     // Pull to refresh (mobile only) - native feel
     let pullStartY = 0;
+    let currentPullDistance = 0;
     let isPulling = false;
     let isRefreshing = false;
-    const pullThreshold = 100;
-    const maxPull = 150;
+    let hasTriggeredHaptic = false;
+    const pullThreshold = 60;
+    const maxPull = 120;
 
     const spinner = document.getElementById('ptr-spinner');
     const dashboard = document.getElementById('dashboard-content');
 
+    // Haptic feedback helper
+    function haptic(style = 'light') {
+      if ('vibrate' in navigator) {
+        if (style === 'light') navigator.vibrate(10);
+        else if (style === 'medium') navigator.vibrate(20);
+        else if (style === 'success') navigator.vibrate([10, 50, 20]);
+      }
+    }
+
     document.addEventListener('touchstart', (e) => {
-      if (window.scrollY === 0 && !isRefreshing) {
+      if (isRefreshing) return;
+
+      // Check if we're at the top
+      if (window.scrollY <= 0) {
         pullStartY = e.touches[0].clientY;
         isPulling = true;
+        hasTriggeredHaptic = false;
+        currentPullDistance = 0;
         dashboard.style.transition = 'none';
+        spinner.style.transition = 'none';
       }
     }, { passive: true });
 
@@ -1680,24 +1697,33 @@
       if (!isPulling || isRefreshing) return;
 
       const currentY = e.touches[0].clientY;
-      let pullDistance = currentY - pullStartY;
+      const rawPull = currentY - pullStartY;
 
       // Only activate when pulling down and at top of page
-      if (pullDistance > 0 && window.scrollY === 0) {
-        // Apply resistance - feels more natural
-        const resistance = 0.4;
-        const adjustedPull = Math.min(pullDistance * resistance, maxPull);
+      if (rawPull > 0 && window.scrollY <= 0) {
+        // Apply resistance curve - gets harder to pull as you go
+        const resistance = Math.max(0.4 - (rawPull / 1000), 0.2);
+        currentPullDistance = Math.min(rawPull * resistance, maxPull);
 
         // Move the entire dashboard content down
-        dashboard.style.transform = `translateY(${adjustedPull}px)`;
+        dashboard.style.transform = `translateY(${currentPullDistance}px)`;
 
         // Position and show spinner
-        spinner.style.top = `${adjustedPull - 40}px`;
+        spinner.style.top = `${currentPullDistance - 30}px`;
+        spinner.style.opacity = Math.min(currentPullDistance / pullThreshold, 1);
         spinner.classList.add('visible');
 
         // Rotate spinner based on pull progress
-        const rotation = (adjustedPull / pullThreshold) * 360;
+        const rotation = (currentPullDistance / pullThreshold) * 360;
         spinner.querySelector('svg').style.transform = `rotate(${rotation}deg)`;
+
+        // Haptic when crossing threshold
+        if (currentPullDistance >= pullThreshold && !hasTriggeredHaptic) {
+          hasTriggeredHaptic = true;
+          haptic('medium');
+        } else if (currentPullDistance < pullThreshold && hasTriggeredHaptic) {
+          hasTriggeredHaptic = false;
+        }
       }
     }, { passive: true });
 
@@ -1705,36 +1731,44 @@
       if (!isPulling || isRefreshing) return;
       isPulling = false;
 
-      const currentTransform = dashboard.style.transform;
-      const match = currentTransform.match(/translateY\(([0-9.]+)px\)/);
-      const currentPull = match ? parseFloat(match[1]) : 0;
+      dashboard.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+      spinner.style.transition = 'top 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease';
 
-      dashboard.style.transition = 'transform 0.3s ease';
-
-      if (currentPull >= pullThreshold * 0.4) {
+      if (currentPullDistance >= pullThreshold) {
         // Trigger refresh
         isRefreshing = true;
+        haptic('success');
 
         // Hold at refresh position
-        dashboard.style.transform = 'translateY(60px)';
+        dashboard.style.transform = 'translateY(50px)';
         spinner.style.top = '20px';
+        spinner.style.opacity = '1';
         spinner.classList.add('refreshing');
 
         await fetchData(true);
 
+        // Small delay so user sees the refresh happened
+        await new Promise(resolve => setTimeout(resolve, 300));
+
         // Animate back
         spinner.classList.remove('refreshing');
         dashboard.style.transform = 'translateY(0)';
-        spinner.classList.remove('visible');
+        spinner.style.opacity = '0';
 
         setTimeout(() => {
+          spinner.classList.remove('visible');
           isRefreshing = false;
         }, 300);
       } else {
         // Snap back
         dashboard.style.transform = 'translateY(0)';
-        spinner.classList.remove('visible');
+        spinner.style.opacity = '0';
+        setTimeout(() => {
+          spinner.classList.remove('visible');
+        }, 300);
       }
+
+      currentPullDistance = 0;
     }, { passive: true });
   </script>
 </body>
