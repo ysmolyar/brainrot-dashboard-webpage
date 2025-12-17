@@ -1098,31 +1098,36 @@
                       }
                     }
 
-                    // Build HTML content
-                    let innerHtml = `<div style="margin-bottom: 8px;">${label}${hoursAgoText}</div>`;
+                    // Build HTML content with table for alignment
+                    let innerHtml = `<div style="margin-bottom: 8px; display: flex; justify-content: space-between;"><span>${label}</span>${hoursAgoText}</div>`;
 
                     // Gross Proceeds
                     const grossProceeds = data.newPurchases + data.renewals;
-                    innerHtml += `<div style="margin-bottom: 6px;">Gross Proceeds&nbsp;&nbsp;&nbsp;$${grossProceeds.toFixed(2)}</div>`;
 
                     // Find each dataset in order
                     const newItem = items.find(item => item.dataset.label === 'New');
                     const renewalItem = items.find(item => item.dataset.label === 'Renewal');
                     const spendItem = items.find(item => item.dataset.label === 'Ad Spend');
 
-                    if (newItem) {
-                      innerHtml += `<div><span style="color: #4ADE80;">●</span> New&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$${newItem.raw.toFixed(2)}</div>`;
-                    }
-                    if (renewalItem) {
-                      innerHtml += `<div><span style="color: #22D3D3;">●</span> Renewal&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$${renewalItem.raw.toFixed(2)}</div>`;
-                    }
-                    if (spendItem) {
-                      innerHtml += `<div><span style="color: #EF4444;">●</span> Spend&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$${spendItem.raw.toFixed(2)}</div>`;
-                    }
-
                     // Net Profit
                     const netProfit = grossProceeds - data.spend;
-                    innerHtml += `<div style="margin-top: 6px;">Net Profit&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$${netProfit.toFixed(2)}</div>`;
+
+                    const numColor = '#9AFCF1';
+                    const netProfitColor = netProfit >= 0 ? '#4ADE80' : '#EF4444';
+
+                    innerHtml += `<table style="border-collapse: collapse; width: 100%;">`;
+                    innerHtml += `<tr style="margin-bottom: 6px;"><td>Gross Proceeds</td><td style="text-align: right; padding-left: 16px; color: ${numColor};">$${grossProceeds.toFixed(2)}</td></tr>`;
+                    if (newItem) {
+                      innerHtml += `<tr><td><span style="color: #4ADE80;">●</span> New</td><td style="text-align: right; padding-left: 16px; color: ${numColor};">$${newItem.raw.toFixed(2)}</td></tr>`;
+                    }
+                    if (renewalItem) {
+                      innerHtml += `<tr><td><span style="color: #22D3D3;">●</span> Renewal</td><td style="text-align: right; padding-left: 16px; color: ${numColor};">$${renewalItem.raw.toFixed(2)}</td></tr>`;
+                    }
+                    if (spendItem) {
+                      innerHtml += `<tr><td><span style="color: #EF4444;">●</span> Spend</td><td style="text-align: right; padding-left: 16px; color: ${numColor};">$${spendItem.raw.toFixed(2)}</td></tr>`;
+                    }
+                    innerHtml += `<tr style="margin-top: 6px;"><td>Net Profit</td><td style="text-align: right; padding-left: 16px; color: ${netProfitColor};">$${netProfit.toFixed(2)}</td></tr>`;
+                    innerHtml += `</table>`;
 
                     tooltipEl.innerHTML = innerHtml;
                   }
