@@ -593,6 +593,14 @@
               </div>
             </td>
           </tr>
+          <tr id="net-profit-row" style="border-top: 1px solid #4B5563;">
+            <td class="sticky-col">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="display: inline-block; width: 12px; height: 12px;"></span>
+                <span style="font-weight: 500;">Net Profit</span>
+              </div>
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -1260,12 +1268,14 @@
       const newRow = document.getElementById('new-row');
       const renewalRow = document.getElementById('renewal-row');
       const spendRow = document.getElementById('spend-row');
+      const netProfitRow = document.getElementById('net-profit-row');
 
       // Clear existing data cells (keep first sticky column)
       while (headerRow.children.length > 1) headerRow.removeChild(headerRow.lastChild);
       while (newRow.children.length > 1) newRow.removeChild(newRow.lastChild);
       while (renewalRow.children.length > 1) renewalRow.removeChild(renewalRow.lastChild);
       while (spendRow.children.length > 1) spendRow.removeChild(spendRow.lastChild);
+      while (netProfitRow.children.length > 1) netProfitRow.removeChild(netProfitRow.lastChild);
 
       // Add data columns for each time period
       processedData.forEach(row => {
@@ -1312,6 +1322,13 @@
         spendTd.textContent = '$' + row.spend.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         spendTd.style.color = 'white';
         spendRow.appendChild(spendTd);
+
+        // Net Profit
+        const netProfit = row.newPurchases + row.renewals - row.spend;
+        const netProfitTd = document.createElement('td');
+        netProfitTd.textContent = '$' + netProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        netProfitTd.style.color = netProfit >= 0 ? '#4ADE80' : '#EF4444';
+        netProfitRow.appendChild(netProfitTd);
       });
 
       // Add total column
@@ -1347,6 +1364,14 @@
       totalSpendTd.style.color = 'white';
       totalSpendTd.style.fontWeight = '600';
       spendRow.appendChild(totalSpendTd);
+
+      // Total net profit
+      const totalNetProfit = totals.newPurchases + totals.renewals - totals.spend;
+      const totalNetProfitTd = document.createElement('td');
+      totalNetProfitTd.textContent = '$' + totalNetProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      totalNetProfitTd.style.color = totalNetProfit >= 0 ? '#4ADE80' : '#EF4444';
+      totalNetProfitTd.style.fontWeight = '600';
+      netProfitRow.appendChild(totalNetProfitTd);
 
       // Scroll table to the right to show most recent data and totals
       const tableContainer = document.querySelector('.chart-container[style*="overflow-x"]');
