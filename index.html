@@ -819,7 +819,10 @@
 
       switch (range) {
         case '24h':
-          return { start: new Date(now - 24 * 60 * 60 * 1000), end: now };
+          // Start at the beginning of the hour 24 hours ago to capture all data in that hour
+          const start24h = new Date(now - 24 * 60 * 60 * 1000);
+          start24h.setMinutes(0, 0, 0);
+          return { start: start24h, end: now };
         case 'today':
           return { start: today, end: now };
         case 'yesterday':
