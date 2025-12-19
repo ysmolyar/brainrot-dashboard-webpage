@@ -816,7 +816,7 @@
       const range = document.getElementById('time-range').value;
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      
+
       switch (range) {
         case '24h':
           return { start: new Date(now - 24 * 60 * 60 * 1000), end: now };
@@ -826,17 +826,18 @@
           const yesterday = new Date(today - 24 * 60 * 60 * 1000);
           return { start: yesterday, end: today };
         case '7d':
-          return { start: new Date(now - 7 * 24 * 60 * 60 * 1000), end: now };
+          // Today + 6 previous whole days = 7 days total
+          return { start: new Date(today - 6 * 24 * 60 * 60 * 1000), end: now };
         case '14d':
-          return { start: new Date(now - 14 * 24 * 60 * 60 * 1000), end: now };
+          return { start: new Date(today - 13 * 24 * 60 * 60 * 1000), end: now };
         case '30d':
-          return { start: new Date(now - 30 * 24 * 60 * 60 * 1000), end: now };
+          return { start: new Date(today - 29 * 24 * 60 * 60 * 1000), end: now };
         case '90d':
-          return { start: new Date(now - 90 * 24 * 60 * 60 * 1000), end: now };
+          return { start: new Date(today - 89 * 24 * 60 * 60 * 1000), end: now };
         case '180d':
-          return { start: new Date(now - 180 * 24 * 60 * 60 * 1000), end: now };
+          return { start: new Date(today - 179 * 24 * 60 * 60 * 1000), end: now };
         default:
-          return { start: new Date(now - 7 * 24 * 60 * 60 * 1000), end: now };
+          return { start: new Date(today - 6 * 24 * 60 * 60 * 1000), end: now };
       }
     }
 
@@ -934,7 +935,8 @@
       const timezone = document.getElementById('timezone').value;
 
       if (granularity === 'daily') {
-        const date = new Date(bucket);
+        // Parse as noon in the selected timezone to avoid date shifting
+        const date = new Date(bucket + 'T12:00:00');
         // Format in selected timezone
         const dateStr = date.toLocaleDateString('en-US', {
           timeZone: timezone,
@@ -1088,18 +1090,34 @@
                     const items = tooltipModel.dataPoints;
                     const label = formatLabel(data.bucket);
 
-                    // Calculate hours ago for hourly data
-                    let hoursAgoText = '';
+                    // Calculate hours/days ago
+                    let timeAgoText = '';
                     if (granularity === 'hourly') {
                       const bucketDate = new Date(data.bucket + ':00:00');
-                      const hoursAgo = Math.round((new Date() - bucketDate) / (1000 * 60 * 60));
+                      const hoursAgo = Math.floor((new Date() - bucketDate) / (1000 * 60 * 60));
                       if (!isNaN(hoursAgo) && hoursAgo >= 0) {
-                        hoursAgoText = ` <span style="color: #9CA3AF;">${hoursAgo} hours ago</span>`;
+                        timeAgoText = ` <span style="color: #9CA3AF;">${hoursAgo} hour${hoursAgo !== 1 ? 's' : ''} ago</span>`;
+                      }
+                    } else {
+                      // Daily - calculate days ago
+                      const bucketDate = new Date(data.bucket + 'T12:00:00');
+                      const now = new Date();
+                      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                      const bucketStart = new Date(bucketDate.getFullYear(), bucketDate.getMonth(), bucketDate.getDate());
+                      const daysAgo = Math.floor((todayStart - bucketStart) / (1000 * 60 * 60 * 24));
+                      if (!isNaN(daysAgo) && daysAgo >= 0) {
+                        if (daysAgo === 0) {
+                          timeAgoText = ` <span style="color: #9CA3AF;">today</span>`;
+                        } else if (daysAgo === 1) {
+                          timeAgoText = ` <span style="color: #9CA3AF;">yesterday</span>`;
+                        } else {
+                          timeAgoText = ` <span style="color: #9CA3AF;">${daysAgo} days ago</span>`;
+                        }
                       }
                     }
 
                     // Build HTML content with table for alignment
-                    let innerHtml = `<div style="margin-bottom: 8px; display: flex; justify-content: space-between;"><span>${label}</span>${hoursAgoText}</div>`;
+                    let innerHtml = `<div style="margin-bottom: 8px; display: flex; justify-content: space-between;"><span>${label}</span>${timeAgoText}</div>`;
 
                     // Gross Proceeds
                     const grossProceeds = data.newPurchases + data.renewals;
