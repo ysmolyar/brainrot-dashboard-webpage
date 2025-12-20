@@ -108,6 +108,52 @@
     .cyan { color: #22D3D3; }
     .blue { color: #60A5FA; }
 
+    .insights-container {
+      margin-bottom: 16px;
+    }
+    .insight {
+      background: #1F2937;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .insight:last-child { margin-bottom: 0; }
+    .insight-icon {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    .insight-warning .insight-icon { background: rgba(251, 191, 36, 0.2); color: #FBBF24; }
+    .insight-danger .insight-icon { background: rgba(248, 113, 113, 0.2); color: #F87171; }
+    .insight-success .insight-icon { background: rgba(74, 222, 128, 0.2); color: #4ADE80; }
+    .insight-info .insight-icon { background: rgba(96, 165, 250, 0.2); color: #60A5FA; }
+    .insight-content { flex: 1; }
+    .insight-title {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 2px;
+    }
+    .insight-warning .insight-title { color: #FBBF24; }
+    .insight-danger .insight-title { color: #F87171; }
+    .insight-success .insight-title { color: #4ADE80; }
+    .insight-info .insight-title { color: #60A5FA; }
+    .insight-description {
+      font-size: 0.8rem;
+      color: #9CA3AF;
+      line-height: 1.4;
+    }
+    .insights-empty {
+      display: none;
+    }
+
     .chart-container {
       background: #1F2937;
       padding: 20px 16px 16px 16px;
@@ -671,6 +717,12 @@
             <div class="menu-option" onclick="selectTimezone('America/New_York')">EST</div>
           </div>
           <div class="menu-section">
+            <label class="menu-option" style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" id="boost-toggle-mobile" onchange="toggleBoost(this.checked)" style="margin-right: 8px;">
+              Boost Mode
+            </label>
+          </div>
+          <div class="menu-section">
             <div class="menu-option" onclick="fetchData(true); toggleHamburgerMenu();">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px; vertical-align: middle;">
                 <path d="M23 4v6h-6"></path>
@@ -696,6 +748,10 @@
           <option value="America/Los_Angeles">PST</option>
           <option value="America/New_York">EST</option>
         </select>
+        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.875rem; color: #9CA3AF;">
+          <input type="checkbox" id="boost-toggle-desktop" onchange="toggleBoost(this.checked)">
+          Boost
+        </label>
         <button onclick="fetchData(true)" style="padding: 6px 10px; display: flex; align-items: center; justify-content: center;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M23 4v6h-6"></path>
@@ -712,16 +768,16 @@
         <div class="card-label">Amount Spent</div>
       </div>
       <div class="card">
-        <div class="card-value" id="total-conversions">0</div>
-        <div class="card-label">Results</div>
+        <div class="card-value" id="boost-factor">1.0x</div>
+        <div class="card-label">Boost Factor</div>
       </div>
       <div class="card">
         <div class="card-value" id="avg-cpa">$0</div>
-        <div class="card-label">Cost per Result</div>
+        <div class="card-label" id="cpa-label">Cost per Result</div>
       </div>
       <div class="card">
         <div class="card-value" id="avg-roas">0.00</div>
-        <div class="card-label">Results ROAS</div>
+        <div class="card-label" id="roas-label">Real ROAS</div>
       </div>
       <div class="card">
         <div class="card-value" id="avg-ctr">0%</div>
@@ -732,6 +788,8 @@
         <div class="card-label">CPC</div>
       </div>
     </div>
+
+    <div class="insights-container" id="insights-container"></div>
 
     <div class="chart-container" style="position: relative; padding-top: 40px;">
       <div style="position: absolute; top: 12px; right: 16px; z-index: 10;">
@@ -761,12 +819,17 @@
               <option value="cpa">Cost per Result</option>
               <option value="conversions">Results</option>
               <option value="conversion_value">Results Value</option>
-              <option value="purchase_roas">ROAS</option>
+              <option value="purchase_roas">Meta ROAS</option>
               <option value="appstore_conv">App Store Conv</option>
               <option value="onboarding_conv">Onboarding Conv</option>
               <option value="impressions">Impressions</option>
               <option value="clicks">Clicks</option>
               <option value="app_installs">App Installs</option>
+              <option value="sw_new_proceeds">SW New $</option>
+              <option value="sw_renewal_proceeds">SW Renewal $</option>
+              <option value="sw_total_proceeds">SW Total $</option>
+              <option value="real_roas">Real ROAS</option>
+              <option value="real_cpa">Real Cost per Result</option>
               <option value="none">None</option>
             </select>
           </div>
@@ -778,15 +841,20 @@
               <option value="cpm">CPM</option>
               <option value="cpc">CPC</option>
               <option value="ctr">CTR</option>
-              <option value="cpa" selected>Cost per Result</option>
+              <option value="cpa">Cost per Result</option>
               <option value="conversions">Results</option>
               <option value="conversion_value">Results Value</option>
-              <option value="purchase_roas">ROAS</option>
+              <option value="purchase_roas">Meta ROAS</option>
               <option value="appstore_conv">App Store Conv</option>
               <option value="onboarding_conv">Onboarding Conv</option>
               <option value="impressions">Impressions</option>
               <option value="clicks">Clicks</option>
               <option value="app_installs">App Installs</option>
+              <option value="sw_new_proceeds">SW New $</option>
+              <option value="sw_renewal_proceeds">SW Renewal $</option>
+              <option value="sw_total_proceeds">SW Total $</option>
+              <option value="real_roas" selected>Real ROAS</option>
+              <option value="real_cpa">Real Cost per Result</option>
             </select>
           </div>
         </div>
@@ -834,9 +902,11 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1dWVpemV4aWRidXZ2Z3Z4cG1zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MjM2NjksImV4cCI6MjA4MTM5OTY2OX0.lQ0MVBF98Jvc8qzP4M3W2osRvWQlUuCHeVTajuERi7A';
 
     let adsData = [];
+    let superwallData = [];
     let chart = null;
     let chartData = [];
     let granularity = 'hourly';
+    let boostEnabled = localStorage.getItem('brainrot_boost_enabled') !== 'false'; // Default to true
 
     // All available columns with their display names and formatting
     const ALL_COLUMNS = {
@@ -851,6 +921,11 @@
       conversions: { label: 'Results', type: 'number', default: true },
       conversion_value: { label: 'Results Value', type: 'currency', default: true },
       purchase_roas: { label: 'Results ROAS', type: 'decimal', default: true },
+      // Superwall columns
+      sw_new_proceeds: { label: 'SW New $', type: 'currency', default: false },
+      sw_renewal_proceeds: { label: 'SW Renewal $', type: 'currency', default: false },
+      sw_total_proceeds: { label: 'SW Total $', type: 'currency', default: false },
+      real_roas: { label: 'Real ROAS', type: 'decimal', default: false },
       // Additional columns (hidden by default)
       impressions: { label: 'Impressions', type: 'number', default: false },
       clicks: { label: 'Clicks', type: 'number', default: false },
@@ -862,8 +937,8 @@
     };
 
     // Load visible columns from localStorage or use defaults
-    // Version 2: Reset columns to new defaults
-    const COLUMNS_VERSION = 2;
+    // Version 3: Reset columns to include new Superwall columns
+    const COLUMNS_VERSION = 3;
     const storedVersion = localStorage.getItem('ads_columns_version');
     if (storedVersion !== String(COLUMNS_VERSION)) {
       localStorage.removeItem('ads_visible_columns');
@@ -914,17 +989,23 @@
 
     async function fetchData(forceRefresh = false) {
       const CACHE_KEY = 'brainrot_ads_cache';
+      const SUPERWALL_CACHE_KEY = 'brainrot_superwall_cache'; // Shared across pages
       const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
 
       // Check cache first
       if (!forceRefresh) {
         const cached = localStorage.getItem(CACHE_KEY);
-        if (cached) {
-          const cacheData = JSON.parse(cached);
-          const cacheAge = Date.now() - cacheData.timestamp;
+        const superwallCached = localStorage.getItem(SUPERWALL_CACHE_KEY);
 
-          if (cacheAge < CACHE_DURATION) {
+        if (cached && superwallCached) {
+          const cacheData = JSON.parse(cached);
+          const swCache = JSON.parse(superwallCached);
+          const cacheAge = Date.now() - cacheData.timestamp;
+          const swCacheAge = Date.now() - swCache.timestamp;
+
+          if (cacheAge < CACHE_DURATION && swCacheAge < CACHE_DURATION) {
             adsData = cacheData.adsData;
+            superwallData = swCache.data;
             updateSubtitle();
             render();
             return;
@@ -958,10 +1039,53 @@
           return allData;
         };
 
+        // Check if we can use shared Superwall cache
+        let needSuperwallFetch = true;
+        const superwallCached = localStorage.getItem(SUPERWALL_CACHE_KEY);
+        if (superwallCached && !forceRefresh) {
+          const swCache = JSON.parse(superwallCached);
+          if (Date.now() - swCache.timestamp < CACHE_DURATION) {
+            superwallData = swCache.data;
+            needSuperwallFetch = false;
+            console.log('Using shared Superwall cache');
+          }
+        }
+
+        // Fetch Superwall revenue data (for boost calculation)
+        const fetchAllSuperwall = async () => {
+          let allData = [];
+          let offset = 0;
+          const limit = 1000;
+
+          while (true) {
+            const res = await fetch(
+              `${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type&order=created_at.asc&limit=${limit}&offset=${offset}`,
+              { headers }
+            );
+            const data = await res.json();
+            allData = allData.concat(data);
+
+            if (data.length < limit) break;
+            offset += limit;
+          }
+          return allData;
+        };
+
         adsData = await fetchAllAds();
         console.log('Ads data rows fetched:', adsData.length);
 
-        // Save to cache
+        if (needSuperwallFetch) {
+          superwallData = await fetchAllSuperwall();
+          console.log('Superwall data rows fetched:', superwallData.length);
+
+          // Save to shared Superwall cache
+          localStorage.setItem(SUPERWALL_CACHE_KEY, JSON.stringify({
+            timestamp: Date.now(),
+            data: superwallData
+          }));
+        }
+
+        // Save to ads cache (without Superwall data - use shared cache instead)
         const cacheData = {
           timestamp: Date.now(),
           adsData: adsData
@@ -1032,6 +1156,291 @@
       }
     }
 
+    function getPriorPeriodRange(range) {
+      // Returns the prior period of equal length for comparison
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      switch (range) {
+        case '24h':
+          const start24h = new Date(now - 23 * 60 * 60 * 1000);
+          start24h.setMinutes(0, 0, 0);
+          const priorEnd24h = new Date(start24h);
+          const priorStart24h = new Date(priorEnd24h - 24 * 60 * 60 * 1000);
+          return { start: priorStart24h, end: priorEnd24h };
+        case 'today':
+          const yesterday = new Date(today - 24 * 60 * 60 * 1000);
+          const dayBefore = new Date(today - 48 * 60 * 60 * 1000);
+          return { start: dayBefore, end: yesterday };
+        case 'yesterday':
+          const twoDaysAgo = new Date(today - 48 * 60 * 60 * 1000);
+          const threeDaysAgo = new Date(today - 72 * 60 * 60 * 1000);
+          return { start: threeDaysAgo, end: twoDaysAgo };
+        case '7d':
+          return {
+            start: new Date(today - 13 * 24 * 60 * 60 * 1000),
+            end: new Date(today - 7 * 24 * 60 * 60 * 1000)
+          };
+        case '14d':
+          return {
+            start: new Date(today - 27 * 24 * 60 * 60 * 1000),
+            end: new Date(today - 14 * 24 * 60 * 60 * 1000)
+          };
+        case '30d':
+          return {
+            start: new Date(today - 59 * 24 * 60 * 60 * 1000),
+            end: new Date(today - 30 * 24 * 60 * 60 * 1000)
+          };
+        default:
+          const startDefault = new Date(now - 23 * 60 * 60 * 1000);
+          const priorEndDefault = new Date(startDefault);
+          const priorStartDefault = new Date(priorEndDefault - 24 * 60 * 60 * 1000);
+          return { start: priorStartDefault, end: priorEndDefault };
+      }
+    }
+
+    function calculateMetricsForPeriod(data, start, end) {
+      const filtered = data.filter(row => {
+        const rowDate = new Date(row.hour_utc);
+        return rowDate >= start && rowDate <= end;
+      });
+
+      const totals = filtered.reduce((acc, row) => ({
+        spend: acc.spend + (parseFloat(row.spend) || 0),
+        clicks: acc.clicks + (parseInt(row.clicks) || 0),
+        impressions: acc.impressions + (parseInt(row.impressions) || 0),
+        conversions: acc.conversions + (parseFloat(row.conversions) || 0),
+        conversion_value: acc.conversion_value + (parseFloat(row.conversion_value) || 0),
+        link_clicks: acc.link_clicks + (parseInt(row.link_clicks) || 0),
+        app_installs: acc.app_installs + (parseInt(row.app_installs) || 0)
+      }), { spend: 0, clicks: 0, impressions: 0, conversions: 0, conversion_value: 0, link_clicks: 0, app_installs: 0 });
+
+      return {
+        spend: totals.spend,
+        cpc: totals.clicks > 0 ? totals.spend / totals.clicks : 0,
+        ctr: totals.impressions > 0 ? (totals.clicks / totals.impressions) * 100 : 0,
+        cpm: totals.impressions > 0 ? (totals.spend / totals.impressions) * 1000 : 0,
+        cpa: totals.conversions > 0 ? totals.spend / totals.conversions : 0,
+        roas: totals.spend > 0 ? totals.conversion_value / totals.spend : 0,
+        appstore_conv: totals.link_clicks > 0 ? (totals.app_installs / totals.link_clicks) * 100 : 0,
+        onboarding_conv: totals.app_installs > 0 ? (totals.conversions / totals.app_installs) * 100 : 0,
+        conversions: totals.conversions,
+        impressions: totals.impressions,
+        clicks: totals.clicks
+      };
+    }
+
+    function percentChange(current, prior) {
+      if (prior === 0) return current > 0 ? 100 : 0;
+      return ((current - prior) / prior) * 100;
+    }
+
+    function generateInsights(currentMetrics, priorMetrics) {
+      const insights = [];
+
+      // Need sufficient data to make comparisons
+      if (currentMetrics.spend < 10 || priorMetrics.spend < 10) {
+        return insights;
+      }
+
+      const ctrChange = percentChange(currentMetrics.ctr, priorMetrics.ctr);
+      const cpcChange = percentChange(currentMetrics.cpc, priorMetrics.cpc);
+      const cpaChange = percentChange(currentMetrics.cpa, priorMetrics.cpa);
+      const spendChange = percentChange(currentMetrics.spend, priorMetrics.spend);
+
+      // Use real ROAS (boosted) if available, otherwise fall back to Meta ROAS
+      const currentRoas = currentMetrics.realRoas > 0 ? currentMetrics.realRoas : currentMetrics.roas;
+      const priorRoas = priorMetrics.realRoas > 0 ? priorMetrics.realRoas : priorMetrics.roas;
+      const roasChange = percentChange(currentRoas, priorRoas);
+
+      const onboardingChange = percentChange(currentMetrics.onboarding_conv, priorMetrics.onboarding_conv);
+      const appstoreChange = percentChange(currentMetrics.appstore_conv, priorMetrics.appstore_conv);
+
+      // Rule 1: CTR down + CPC up = Creative fatigue
+      if (ctrChange < -15 && cpcChange > 10) {
+        insights.push({
+          type: 'warning',
+          title: 'Creatives may be fatiguing',
+          description: `CTR down ${Math.abs(ctrChange).toFixed(0)}% and CPC up ${cpcChange.toFixed(0)}% vs prior period. Consider testing new ad creatives.`
+        });
+      }
+
+      // Rule 2: Onboarding conversion drops suddenly = potential bug
+      if (onboardingChange < -25 && priorMetrics.onboarding_conv > 5) {
+        insights.push({
+          type: 'danger',
+          title: 'Onboarding conversion dropped significantly',
+          description: `Down ${Math.abs(onboardingChange).toFixed(0)}% vs prior period. Check for bugs in the onboarding flow or paywall.`
+        });
+      }
+
+      // Rule 3: App Store conversion drops = listing or audience issue
+      if (appstoreChange < -20 && priorMetrics.appstore_conv > 10) {
+        insights.push({
+          type: 'warning',
+          title: 'App Store conversion declined',
+          description: `Down ${Math.abs(appstoreChange).toFixed(0)}% vs prior period. Check App Store listing or audience targeting quality.`
+        });
+      }
+
+      // Rule 4: CPA rising but CTR stable = conversion funnel issue
+      if (cpaChange > 20 && Math.abs(ctrChange) < 10) {
+        insights.push({
+          type: 'warning',
+          title: 'CPA rising while CTR is stable',
+          description: `CPA up ${cpaChange.toFixed(0)}% but ads performing similarly. Issue is likely in the conversion funnel, not the ads.`
+        });
+      }
+
+      // Rule 5: Strong ROAS = scale opportunity (use real ROAS)
+      if (currentRoas > 2.0 && roasChange > -10) {
+        insights.push({
+          type: 'success',
+          title: 'Strong ROAS - scale opportunity',
+          description: `Real ROAS of ${currentRoas.toFixed(2)}x is profitable. Consider increasing spend to capture more volume.`
+        });
+      }
+
+      // Rule 6: ROAS below 1 = reduce spend (use real ROAS)
+      if (currentRoas < 1.0 && currentRoas > 0 && currentMetrics.conversions >= 3) {
+        insights.push({
+          type: 'danger',
+          title: 'ROAS below breakeven',
+          description: `Real ROAS of ${currentRoas.toFixed(2)}x means you're losing money. Consider reducing spend or pausing underperformers.`
+        });
+      }
+
+      // Rule 7: CPC rising significantly with stable CTR = audience saturation
+      if (cpcChange > 25 && Math.abs(ctrChange) < 10) {
+        insights.push({
+          type: 'info',
+          title: 'Rising CPCs suggest audience saturation',
+          description: `CPC up ${cpcChange.toFixed(0)}% while CTR stable. Consider expanding audience targeting or testing new demographics.`
+        });
+      }
+
+      // Rule 8: Everything improving = keep going
+      if (ctrChange > 10 && cpaChange < -10 && roasChange > 10) {
+        insights.push({
+          type: 'success',
+          title: 'Performance improving across the board',
+          description: `CTR up ${ctrChange.toFixed(0)}%, CPA down ${Math.abs(cpaChange).toFixed(0)}%, ROAS up ${roasChange.toFixed(0)}%. Keep current strategy.`
+        });
+      }
+
+      // Rule 9: High spend with declining efficiency
+      if (spendChange > 30 && roasChange < -15) {
+        insights.push({
+          type: 'warning',
+          title: 'Efficiency declining with increased spend',
+          description: `Spend up ${spendChange.toFixed(0)}% but ROAS down ${Math.abs(roasChange).toFixed(0)}%. You may be hitting diminishing returns.`
+        });
+      }
+
+      // Limit to top 2 most important insights
+      return insights.slice(0, 2);
+    }
+
+    function calculateSuperwallProceeds(start, end) {
+      // Filter Superwall data by time range and calculate proceeds by type
+      // Use raw UTC time (no correction) to match how ads data is filtered
+      const filtered = superwallData.filter(row => {
+        const date = new Date(row.created_at);
+        return date >= start && date <= end;
+      });
+
+      // Sum proceeds from initial purchases (new revenue)
+      const newProceeds = filtered
+        .filter(row => row.event_type === 'initial_purchase')
+        .reduce((sum, row) => sum + (parseFloat(row.proceeds) || 0), 0);
+
+      // Sum proceeds from renewals
+      const renewalProceeds = filtered
+        .filter(row => row.event_type === 'renewal')
+        .reduce((sum, row) => sum + (parseFloat(row.proceeds) || 0), 0);
+
+      const totalProceeds = newProceeds + renewalProceeds;
+
+      return { newProceeds, renewalProceeds, totalProceeds };
+    }
+
+    function calculateSuperwallProceedsForHour(hourUtc) {
+      // Calculate Superwall proceeds for a specific hour bucket
+      // Use raw UTC time (no correction) to match how ads data is filtered
+      const hourStart = new Date(hourUtc);
+      const hourEnd = new Date(hourStart.getTime() + 60 * 60 * 1000);
+
+      const filtered = superwallData.filter(row => {
+        const date = new Date(row.created_at);
+        return date >= hourStart && date < hourEnd;
+      });
+
+      const newProceeds = filtered
+        .filter(row => row.event_type === 'initial_purchase')
+        .reduce((sum, row) => sum + (parseFloat(row.proceeds) || 0), 0);
+
+      const renewalProceeds = filtered
+        .filter(row => row.event_type === 'renewal')
+        .reduce((sum, row) => sum + (parseFloat(row.proceeds) || 0), 0);
+
+      return { newProceeds, renewalProceeds, totalProceeds: newProceeds + renewalProceeds };
+    }
+
+    function calculateSuperwallProceedsForDay(dayKey) {
+      // Calculate Superwall proceeds for a specific day (YYYY-MM-DD format)
+      // Use raw UTC time (no correction) to match how ads data is filtered
+      const dayStart = new Date(dayKey + 'T00:00:00Z');
+      const dayEnd = new Date(dayKey + 'T23:59:59.999Z');
+
+      const filtered = superwallData.filter(row => {
+        const date = new Date(row.created_at);
+        return date >= dayStart && date <= dayEnd;
+      });
+
+      const newProceeds = filtered
+        .filter(row => row.event_type === 'initial_purchase')
+        .reduce((sum, row) => sum + (parseFloat(row.proceeds) || 0), 0);
+
+      const renewalProceeds = filtered
+        .filter(row => row.event_type === 'renewal')
+        .reduce((sum, row) => sum + (parseFloat(row.proceeds) || 0), 0);
+
+      return { newProceeds, renewalProceeds, totalProceeds: newProceeds + renewalProceeds };
+    }
+
+    function calculateBoostFactor(superwallProceeds, metaConversionValue) {
+      // Boost factor = actual Superwall proceeds / Meta reported conversion value
+      if (metaConversionValue <= 0) return 1;
+      if (superwallProceeds <= 0) return 1;
+      return superwallProceeds / metaConversionValue;
+    }
+
+    function renderInsights(insights) {
+      const container = document.getElementById('insights-container');
+
+      if (insights.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+
+      const icons = {
+        warning: '!',
+        danger: '!',
+        success: '✓',
+        info: 'i'
+      };
+
+      container.innerHTML = insights.map(insight => `
+        <div class="insight insight-${insight.type}">
+          <div class="insight-icon">${icons[insight.type]}</div>
+          <div class="insight-content">
+            <div class="insight-title">${insight.title}</div>
+            <div class="insight-description">${insight.description}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
     function render() {
       const range = document.getElementById('time-range').value;
       const timezone = document.getElementById('timezone').value;
@@ -1067,13 +1476,65 @@
       const cardAppstoreConv = totals.link_clicks > 0 ? (totals.app_installs / totals.link_clicks) * 100 : 0;
       const cardOnboardingConv = totals.app_installs > 0 ? (totals.conversions / totals.app_installs) * 100 : 0;
 
+      // Calculate Superwall proceeds for period
+      const swProceeds = calculateSuperwallProceeds(start, end);
+      const superwallNewProceeds = swProceeds.newProceeds;
+      const superwallRenewalProceeds = swProceeds.renewalProceeds;
+      const superwallTotalProceeds = swProceeds.totalProceeds;
+
+      // Real ROAS uses new purchases only (matching index.html)
+      const boostFactor = calculateBoostFactor(superwallNewProceeds, totals.conversion_value);
+      const realRoas = totals.spend > 0 ? superwallNewProceeds / totals.spend : 0;
+      const realCpa = boostFactor > 1 ? avgCpa / boostFactor : avgCpa;
+      const boostedConversions = boostFactor > 1 ? totals.conversions * boostFactor : totals.conversions;
+
       // Update cards
-      document.getElementById('total-spend').textContent = formatValue(totals.spend, 'currency');
-      document.getElementById('total-conversions').textContent = formatValue(totals.conversions, 'number');
-      document.getElementById('avg-cpa').textContent = formatValue(avgCpa, 'currency');
-      document.getElementById('avg-roas').textContent = formatValue(avgRoas, 'decimal');
+      document.getElementById('total-spend').textContent = '$' + Math.round(totals.spend).toLocaleString();
+
+      // Boost Factor card
+      document.getElementById('boost-factor').textContent = boostFactor.toFixed(2) + 'x';
+
+      // CPA card - show boosted if enabled
+      const cpaEl = document.getElementById('avg-cpa');
+      const cpaLabelEl = document.getElementById('cpa-label');
+      if (boostEnabled && boostFactor > 1.1 && superwallNewProceeds > 0) {
+        cpaEl.textContent = formatValue(realCpa, 'currency');
+        cpaLabelEl.textContent = 'Cost per Result (Boosted)';
+      } else {
+        cpaEl.textContent = formatValue(avgCpa, 'currency');
+        cpaLabelEl.textContent = 'Cost per Result';
+      }
+
+      // ROAS card - show boosted if enabled
+      const roasEl = document.getElementById('avg-roas');
+      const roasLabelEl = document.getElementById('roas-label');
+      if (boostEnabled && boostFactor > 1.1 && superwallNewProceeds > 0) {
+        roasEl.textContent = realRoas.toFixed(2);
+        roasLabelEl.textContent = 'ROAS (Boosted)';
+      } else {
+        roasEl.textContent = formatValue(avgRoas, 'decimal');
+        roasLabelEl.textContent = 'ROAS';
+      }
+
       document.getElementById('avg-ctr').textContent = formatValue(avgCtr, 'percent');
       document.getElementById('avg-cpc').textContent = formatValue(avgCpc, 'currency');
+
+      // Generate insights by comparing to prior period (using boosted metrics)
+      const priorRange = getPriorPeriodRange(range);
+      const currentMetrics = calculateMetricsForPeriod(adsData, start, end);
+      const priorMetrics = calculateMetricsForPeriod(adsData, priorRange.start, priorRange.end);
+
+      // Add boosted ROAS to metrics for insights
+      currentMetrics.realRoas = realRoas;
+      currentMetrics.boostFactor = boostFactor;
+
+      const priorSwProceeds = calculateSuperwallProceeds(priorRange.start, priorRange.end);
+      const priorBoostFactor = calculateBoostFactor(priorSwProceeds.newProceeds, priorMetrics.roas * priorMetrics.spend);
+      priorMetrics.realRoas = priorMetrics.spend > 0 ? priorSwProceeds.newProceeds / priorMetrics.spend : 0;
+      priorMetrics.boostFactor = priorBoostFactor;
+
+      const insights = generateInsights(currentMetrics, priorMetrics);
+      renderInsights(insights);
 
       // Build table headers
       const headerRow = document.getElementById('ads-table-header');
@@ -1083,7 +1544,8 @@
         const col = ALL_COLUMNS[colKey];
         if (!col) return;
         const th = document.createElement('th');
-        th.textContent = col.label;
+        // Show "Date" instead of "Hour" when in daily mode
+        th.textContent = (colKey === 'hour' && granularity === 'daily') ? 'Date' : col.label;
         headerRow.appendChild(th);
       });
 
@@ -1091,48 +1553,114 @@
       const tbody = document.getElementById('ads-tbody');
       tbody.innerHTML = '';
 
-      filteredAds.forEach(row => {
+      // Update table title based on granularity
+      document.querySelector('.table-title').textContent = granularity === 'daily' ? 'Daily Ad Metrics' : 'Hourly Ad Metrics';
+
+      // Prepare table data based on granularity
+      let tableRows = [];
+      if (granularity === 'daily') {
+        // Aggregate hourly data into daily buckets for table
+        const dailyMap = new Map();
+        filteredAds.forEach(row => {
+          const date = new Date(row.hour_utc);
+          const dayKey = date.toISOString().slice(0, 10); // YYYY-MM-DD
+
+          if (!dailyMap.has(dayKey)) {
+            dailyMap.set(dayKey, {
+              dayKey: dayKey,
+              hour: dayKey + 'T12:00:00Z',
+              spend: 0,
+              impressions: 0,
+              clicks: 0,
+              conversions: 0,
+              conversion_value: 0,
+              link_clicks: 0,
+              app_installs: 0,
+              reach: 0
+            });
+          }
+
+          const day = dailyMap.get(dayKey);
+          day.spend += parseFloat(row.spend) || 0;
+          day.impressions += parseInt(row.impressions) || 0;
+          day.clicks += parseInt(row.clicks) || 0;
+          day.conversions += parseFloat(row.conversions) || 0;
+          day.conversion_value += parseFloat(row.conversion_value) || 0;
+          day.link_clicks += parseInt(row.link_clicks) || 0;
+          day.app_installs += parseInt(row.app_installs) || 0;
+          day.reach += parseInt(row.reach) || 0;
+        });
+
+        tableRows = Array.from(dailyMap.values()).map(day => {
+          const swProceeds = calculateSuperwallProceedsForDay(day.dayKey);
+          return {
+            hour: day.hour,
+            spend: day.spend,
+            impressions: day.impressions,
+            clicks: day.clicks,
+            ctr: day.impressions > 0 ? (day.clicks / day.impressions) * 100 : 0,
+            cpc: day.clicks > 0 ? day.spend / day.clicks : 0,
+            cpm: day.impressions > 0 ? (day.spend / day.impressions) * 1000 : 0,
+            reach: day.reach,
+            frequency: day.reach > 0 ? day.impressions / day.reach : 0,
+            link_clicks: day.link_clicks,
+            app_installs: day.app_installs,
+            conversions: day.conversions,
+            conversion_value: day.conversion_value,
+            cpa: day.conversions > 0 ? day.spend / day.conversions : 0,
+            purchase_roas: day.spend > 0 ? day.conversion_value / day.spend : 0,
+            cost_per_install: day.app_installs > 0 ? day.spend / day.app_installs : 0,
+            appstore_conv: day.link_clicks > 0 ? (day.app_installs / day.link_clicks) * 100 : 0,
+            onboarding_conv: day.app_installs > 0 ? (day.conversions / day.app_installs) * 100 : 0,
+            sw_new_proceeds: swProceeds.newProceeds,
+            sw_renewal_proceeds: swProceeds.renewalProceeds,
+            sw_total_proceeds: swProceeds.totalProceeds,
+            real_roas: day.spend > 0 ? swProceeds.newProceeds / day.spend : 0
+          };
+        });
+      } else {
+        // Hourly data
+        tableRows = filteredAds.map(row => {
+          const spend = parseFloat(row.spend) || 0;
+          const clicks = parseInt(row.clicks) || 0;
+          const impressions = parseInt(row.impressions) || 0;
+          const conversions = parseFloat(row.conversions) || 0;
+          const appInstalls = parseInt(row.app_installs) || 0;
+          const linkClicks = parseInt(row.link_clicks) || 0;
+          const costPerInstall = appInstalls > 0 ? spend / appInstalls : 0;
+          const appstoreConv = linkClicks > 0 ? (appInstalls / linkClicks) * 100 : 0;
+          const onboardingConv = appInstalls > 0 ? (conversions / appInstalls) * 100 : 0;
+          const rowSwProceeds = calculateSuperwallProceedsForHour(row.hour_utc);
+
+          return {
+            hour: row.hour_utc,
+            spend: spend,
+            impressions: impressions,
+            clicks: clicks,
+            ctr: parseFloat(row.ctr) || 0,
+            cpc: parseFloat(row.cpc) || 0,
+            cpm: parseFloat(row.cpm) || 0,
+            reach: parseInt(row.reach) || 0,
+            frequency: parseFloat(row.frequency) || 0,
+            link_clicks: linkClicks,
+            app_installs: appInstalls,
+            conversions: conversions,
+            conversion_value: parseFloat(row.conversion_value) || 0,
+            cpa: conversions > 0 ? spend / conversions : 0,
+            purchase_roas: parseFloat(row.purchase_roas) || 0,
+            cost_per_install: costPerInstall,
+            appstore_conv: appstoreConv,
+            onboarding_conv: onboardingConv,
+            sw_new_proceeds: rowSwProceeds.newProceeds,
+            sw_renewal_proceeds: rowSwProceeds.renewalProceeds,
+            sw_total_proceeds: rowSwProceeds.totalProceeds,
+            real_roas: spend > 0 ? rowSwProceeds.newProceeds / spend : 0
+          };
+        });
+      }
+
+      tableRows.forEach(rowValues => {
         const tr = document.createElement('tr');
-
-        // Pre-calculate derived values
-        const spend = parseFloat(row.spend) || 0;
-        const clicks = parseInt(row.clicks) || 0;
-        const impressions = parseInt(row.impressions) || 0;
-        const conversions = parseFloat(row.conversions) || 0;
-        const appInstalls = parseInt(row.app_installs) || 0;
-        const linkClicks = parseInt(row.link_clicks) || 0;
-        const cpc = parseFloat(row.cpc) || 0;
-        const costPerInstall = appInstalls > 0 ? spend / appInstalls : 0;
-        const costPerPurchase = conversions > 0 ? spend / conversions : 0;
-
-        // App Store Conversion = Link Clicks / App Installs (what % of link clicks become installs)
-        // Actually: CPC / Cost per Install = (spend/clicks) / (spend/installs) = installs/clicks
-        const appstoreConv = linkClicks > 0 ? (appInstalls / linkClicks) * 100 : 0;
-
-        // Onboarding Conversion = App Installs / Conversions (what % of installs become purchases)
-        // Actually: Cost per Install / Cost per Purchase = (spend/installs) / (spend/conversions) = conversions/installs
-        const onboardingConv = appInstalls > 0 ? (conversions / appInstalls) * 100 : 0;
-
-        const rowValues = {
-          hour: row.hour_utc,
-          spend: spend,
-          impressions: impressions,
-          clicks: clicks,
-          ctr: parseFloat(row.ctr) || 0,
-          cpc: cpc,
-          cpm: parseFloat(row.cpm) || 0,
-          reach: parseInt(row.reach) || 0,
-          frequency: parseFloat(row.frequency) || 0,
-          link_clicks: linkClicks,
-          app_installs: appInstalls,
-          conversions: conversions,
-          conversion_value: parseFloat(row.conversion_value) || 0,
-          cpa: conversions > 0 ? spend / conversions : 0,
-          purchase_roas: parseFloat(row.purchase_roas) || 0,
-          cost_per_install: costPerInstall,
-          appstore_conv: appstoreConv,
-          onboarding_conv: onboardingConv
-        };
 
         visibleColumns.forEach(colKey => {
           const col = ALL_COLUMNS[colKey];
@@ -1141,14 +1669,23 @@
           const td = document.createElement('td');
 
           if (colKey === 'hour') {
-            const hourDate = new Date(row.hour_utc);
-            td.textContent = hourDate.toLocaleString('en-US', {
-              timeZone: timezone,
-              month: 'short',
-              day: 'numeric',
-              hour: 'numeric',
-              hour12: true
-            });
+            const hourDate = new Date(rowValues.hour);
+            if (granularity === 'daily') {
+              td.textContent = hourDate.toLocaleString('en-US', {
+                timeZone: timezone,
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric'
+              });
+            } else {
+              td.textContent = hourDate.toLocaleString('en-US', {
+                timeZone: timezone,
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                hour12: true
+              });
+            }
           } else {
             td.textContent = formatValue(rowValues[colKey], col.type);
           }
@@ -1186,7 +1723,11 @@
         purchase_roas: avgRoas,
         cost_per_install: totalCostPerInstall,
         appstore_conv: totalAppstoreConv,
-        onboarding_conv: totalOnboardingConv
+        onboarding_conv: totalOnboardingConv,
+        sw_new_proceeds: superwallNewProceeds,
+        sw_renewal_proceeds: superwallRenewalProceeds,
+        sw_total_proceeds: superwallTotalProceeds,
+        real_roas: realRoas
       };
 
       visibleColumns.forEach(colKey => {
@@ -1252,22 +1793,37 @@
         });
 
         // Convert to chart data with calculated metrics
-        chartData = Array.from(dailyMap.values()).map(day => ({
-          hour: day.hour,
-          spend: day.spend,
-          cpm: day.impressions > 0 ? (day.spend / day.impressions) * 1000 : 0,
-          cpc: day.clicks > 0 ? day.spend / day.clicks : 0,
-          ctr: day.impressions > 0 ? (day.clicks / day.impressions) * 100 : 0,
-          cpa: day.conversions > 0 ? day.spend / day.conversions : 0,
-          conversions: day.conversions,
-          conversion_value: day.conversion_value,
-          purchase_roas: day.spend > 0 ? day.conversion_value / day.spend : 0,
-          appstore_conv: day.link_clicks > 0 ? (day.app_installs / day.link_clicks) * 100 : 0,
-          onboarding_conv: day.app_installs > 0 ? (day.conversions / day.app_installs) * 100 : 0,
-          impressions: day.impressions,
-          clicks: day.clicks,
-          app_installs: day.app_installs
-        }));
+        chartData = Array.from(dailyMap.entries()).map(([dayKey, day]) => {
+          // Calculate Superwall proceeds for this day
+          const swProceeds = calculateSuperwallProceedsForDay(dayKey);
+
+          // Calculate boost factor and real CPA for this day
+          const dayCpa = day.conversions > 0 ? day.spend / day.conversions : 0;
+          const dayBoostFactor = day.conversion_value > 0 ? swProceeds.newProceeds / day.conversion_value : 1;
+          const dayRealCpa = dayBoostFactor > 1 ? dayCpa / dayBoostFactor : dayCpa;
+
+          return {
+            hour: day.hour,
+            spend: day.spend,
+            cpm: day.impressions > 0 ? (day.spend / day.impressions) * 1000 : 0,
+            cpc: day.clicks > 0 ? day.spend / day.clicks : 0,
+            ctr: day.impressions > 0 ? (day.clicks / day.impressions) * 100 : 0,
+            cpa: dayCpa,
+            conversions: day.conversions,
+            conversion_value: day.conversion_value,
+            purchase_roas: day.spend > 0 ? day.conversion_value / day.spend : 0,
+            appstore_conv: day.link_clicks > 0 ? (day.app_installs / day.link_clicks) * 100 : 0,
+            onboarding_conv: day.app_installs > 0 ? (day.conversions / day.app_installs) * 100 : 0,
+            impressions: day.impressions,
+            clicks: day.clicks,
+            app_installs: day.app_installs,
+            sw_new_proceeds: swProceeds.newProceeds,
+            sw_renewal_proceeds: swProceeds.renewalProceeds,
+            sw_total_proceeds: swProceeds.totalProceeds,
+            real_roas: day.spend > 0 ? swProceeds.newProceeds / day.spend : 0,
+            real_cpa: dayRealCpa
+          };
+        });
       } else {
         // Hourly data - no aggregation needed
         chartData = chartAds.map(row => {
@@ -1279,13 +1835,21 @@
           const linkClicks = parseInt(row.link_clicks) || 0;
           const appInstalls = parseInt(row.app_installs) || 0;
 
+          // Calculate Superwall proceeds for this hour
+          const swProceeds = calculateSuperwallProceedsForHour(row.hour_utc);
+
+          // Calculate boost factor and real CPA for this hour
+          const hourCpa = conversions > 0 ? spend / conversions : 0;
+          const hourBoostFactor = conversionValue > 0 ? swProceeds.newProceeds / conversionValue : 1;
+          const hourRealCpa = hourBoostFactor > 1 ? hourCpa / hourBoostFactor : hourCpa;
+
           return {
             hour: row.hour_utc,
             spend: spend,
             cpm: impressions > 0 ? (spend / impressions) * 1000 : 0,
             cpc: clicks > 0 ? spend / clicks : 0,
             ctr: impressions > 0 ? (clicks / impressions) * 100 : 0,
-            cpa: conversions > 0 ? spend / conversions : 0,
+            cpa: hourCpa,
             conversions: conversions,
             conversion_value: conversionValue,
             purchase_roas: spend > 0 ? conversionValue / spend : 0,
@@ -1293,7 +1857,12 @@
             onboarding_conv: appInstalls > 0 ? (conversions / appInstalls) * 100 : 0,
             impressions: impressions,
             clicks: clicks,
-            app_installs: appInstalls
+            app_installs: appInstalls,
+            sw_new_proceeds: swProceeds.newProceeds,
+            sw_renewal_proceeds: swProceeds.renewalProceeds,
+            sw_total_proceeds: swProceeds.totalProceeds,
+            real_roas: spend > 0 ? swProceeds.newProceeds / spend : 0,
+            real_cpa: hourRealCpa
           };
         });
       }
@@ -1334,12 +1903,17 @@
       cpa: { label: 'Cost per Result', type: 'currency' },
       conversions: { label: 'Results', type: 'number' },
       conversion_value: { label: 'Results Value', type: 'currency' },
-      purchase_roas: { label: 'ROAS', type: 'decimal' },
+      purchase_roas: { label: 'Meta ROAS', type: 'decimal' },
       appstore_conv: { label: 'App Store Conv', type: 'percent' },
       onboarding_conv: { label: 'Onboarding Conv', type: 'percent' },
       impressions: { label: 'Impressions', type: 'number' },
       clicks: { label: 'Clicks', type: 'number' },
-      app_installs: { label: 'App Installs', type: 'number' }
+      app_installs: { label: 'App Installs', type: 'number' },
+      sw_new_proceeds: { label: 'SW New $', type: 'currency' },
+      sw_renewal_proceeds: { label: 'SW Renewal $', type: 'currency' },
+      sw_total_proceeds: { label: 'SW Total $', type: 'currency' },
+      real_roas: { label: 'Real ROAS', type: 'decimal' },
+      real_cpa: { label: 'Real Cost per Result', type: 'currency' }
     };
 
     function formatChartValue(value, type) {
@@ -1564,6 +2138,21 @@
       toggleHamburgerMenu();
     }
 
+    function toggleBoost(enabled) {
+      boostEnabled = enabled;
+      localStorage.setItem('brainrot_boost_enabled', enabled.toString());
+      // Sync both checkboxes
+      document.getElementById('boost-toggle-desktop').checked = enabled;
+      document.getElementById('boost-toggle-mobile').checked = enabled;
+      render();
+    }
+
+    function initBoostToggle() {
+      // Initialize checkboxes from localStorage
+      document.getElementById('boost-toggle-desktop').checked = boostEnabled;
+      document.getElementById('boost-toggle-mobile').checked = boostEnabled;
+    }
+
     function updateHamburgerMenuSelection() {
       const timeRange = document.getElementById('time-range').value;
       const timezone = document.getElementById('timezone').value;
@@ -1642,6 +2231,7 @@
     function showDashboard() {
       document.getElementById('password-gate').classList.add('hidden');
       document.getElementById('dashboard-content').classList.add('visible');
+      initBoostToggle();
       fetchData();
     }
 

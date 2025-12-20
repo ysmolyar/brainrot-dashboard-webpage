@@ -702,21 +702,23 @@
 
     async function fetchData(forceRefresh = false) {
       const CACHE_KEY = 'brainrot_dashboard_cache';
+      const SUPERWALL_CACHE_KEY = 'brainrot_superwall_cache'; // Shared across pages
       const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
 
       // Check cache first
       if (!forceRefresh) {
         const cached = localStorage.getItem(CACHE_KEY);
-        if (cached) {
+        const superwallCached = localStorage.getItem(SUPERWALL_CACHE_KEY);
+
+        if (cached && superwallCached) {
           const cacheData = JSON.parse(cached);
+          const swCache = JSON.parse(superwallCached);
           const cacheAge = Date.now() - cacheData.timestamp;
+          const swCacheAge = Date.now() - swCache.timestamp;
 
-          if (cacheAge < CACHE_DURATION) {
-            // Use cached data
+          if (cacheAge < CACHE_DURATION && swCacheAge < CACHE_DURATION) {
             adsData = cacheData.adsData;
-            revenueData = cacheData.revenueData;
-
-            const cacheAgeSeconds = Math.floor(cacheAge / 1000);
+            revenueData = swCache.data;
             updateSubtitle();
             render();
             return;
@@ -759,13 +761,17 @@
         console.log('Ads data rows fetched:', adsData.length);
         console.log('Revenue data rows fetched:', revenueData.length);
 
-        // Save to cache
-        const cacheData = {
+        // Save ads data to its own cache (small)
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
           timestamp: Date.now(),
-          adsData: adsData,
-          revenueData: revenueData
-        };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+          adsData: adsData
+        }));
+
+        // Save Superwall data to shared cache (used by both pages)
+        localStorage.setItem(SUPERWALL_CACHE_KEY, JSON.stringify({
+          timestamp: Date.now(),
+          data: revenueData
+        }));
 
         updateSubtitle();
         render();
