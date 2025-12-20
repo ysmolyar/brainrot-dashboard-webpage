@@ -1362,7 +1362,10 @@
       switch (type) {
         case 'currency':
           if (value >= 1000) return '$' + (value / 1000).toFixed(1) + 'K';
-          return '$' + value.toFixed(0);
+          if (value >= 10) return '$' + Math.round(value);
+          if (value >= 1) return '$' + value.toFixed(2);
+          if (value >= 0.01) return '$' + value.toFixed(2);
+          return '$' + value.toFixed(3);
         case 'percent':
           return value.toFixed(1) + '%';
         case 'decimal':
@@ -1387,7 +1390,7 @@
           label: CHART_METRICS[leftMetric].label,
           data: chartData.map(d => d[leftMetric]),
           borderColor: '#F87171',
-          backgroundColor: 'rgba(248, 113, 113, 0.3)',
+          backgroundColor: 'rgba(248, 113, 113, 0.5)',
           borderWidth: 2,
           fill: true,
           tension: 0,
@@ -1402,7 +1405,7 @@
           label: CHART_METRICS[rightMetric].label,
           data: chartData.map(d => d[rightMetric]),
           borderColor: '#4ADE80',
-          backgroundColor: 'rgba(74, 222, 128, 0.3)',
+          backgroundColor: 'rgba(74, 222, 128, 0.5)',
           borderWidth: 2,
           fill: true,
           tension: 0,
