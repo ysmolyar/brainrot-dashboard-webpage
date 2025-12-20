@@ -1,0 +1,1758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brainrot Ads Dashboard</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="brainrot-icon.png">
+  <link rel="apple-touch-icon" href="brainrot-icon.png">
+
+  <!-- Meta tags for better SEO and sharing -->
+  <meta name="description" content="Ad metrics dashboard for Brainrot app - track spend, clicks, impressions, and conversions">
+  <meta name="author" content="Brainrot">
+  <meta name="theme-color" content="#111827">
+
+  <!-- Open Graph tags for social sharing -->
+  <meta property="og:title" content="Brainrot Ads Dashboard">
+  <meta property="og:description" content="Ad metrics dashboard for Brainrot app">
+  <meta property="og:image" content="brainrot-icon.png">
+  <meta property="og:type" content="website">
+
+  <!-- Apple specific -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Brainrot Ads">
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #111827;
+      color: white;
+      padding: 16px;
+      min-height: 100vh;
+    }
+    .container { max-width: 1200px; margin: 0 auto; width: 100%; }
+
+    /* Mobile-specific adjustments */
+    @media (max-width: 600px) {
+      body { padding: 8px; }
+      .container { padding: 0; }
+    }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+    .main-header { position: relative; }
+    .header-icon { position: absolute; left: 0; top: 50%; transform: translateY(-50%); cursor: pointer; }
+    .header-title { position: absolute; left: 50%; transform: translateX(-50%); text-align: center; }
+    .main-header .controls { margin-left: auto; }
+    h1 { font-size: 1.5rem; }
+    .updated { font-size: 0.75rem; color: #6B7280; }
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+    @media (max-width: 600px) {
+      header { gap: 8px; margin-bottom: 12px; }
+      .main-header { min-height: 50px; padding-top: 8px; }
+      .header-icon { position: absolute; left: 0; top: 8px; transform: none; }
+      .header-title { position: absolute; left: 50%; top: 8px; transform: translateX(-50%); }
+      .hamburger-menu { top: 8px; }
+      h1 { font-size: 1.25rem; }
+      button, select {
+        padding: 6px 10px;
+        font-size: 16px;
+      }
+    }
+    button, select {
+      background: #374151;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      -webkit-text-size-adjust: 100%;
+    }
+    button:hover, select:hover { background: #4B5563; }
+    button.active { background: #2563EB; }
+    select {
+      padding-right: 28px;
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg width='8' height='5' viewBox='0 0 8 5' fill='none' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M1 1L4 4L7 1' stroke='%239CA3AF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+
+    .cards { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 16px; }
+    @media (max-width: 900px) { .cards { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 600px) { .cards { grid-template-columns: repeat(2, 1fr); } }
+    .card {
+      background: #1F2937;
+      padding: 12px;
+      border-radius: 8px;
+    }
+    .card-label { font-size: 0.75rem; color: #9CA3AF; }
+    .card-value { font-size: 1.5rem; font-weight: bold; }
+
+    @media (max-width: 600px) {
+      .card { padding: 8px; }
+      .card-value { font-size: 1.25rem; }
+      .card-label { font-size: 0.7rem; }
+    }
+    .red { color: #F87171; }
+    .green { color: #4ADE80; }
+    .cyan { color: #22D3D3; }
+    .blue { color: #60A5FA; }
+
+    .chart-container {
+      background: #1F2937;
+      padding: 20px 16px 16px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chart-title {
+      font-size: 0.875rem;
+      color: #9CA3AF;
+    }
+
+    .chart-wrapper {
+      position: relative;
+      height: 280px;
+    }
+
+    @media (max-width: 600px) {
+      .chart-container {
+        padding: 16px 8px 8px 8px;
+        border-radius: 4px;
+      }
+      .chart-wrapper { height: 220px; }
+    }
+
+    .chart-selectors {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .metric-selector {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .metric-selector .color-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .metric-selector select {
+      background: #374151;
+      color: white;
+      border: none;
+      padding: 6px 24px 6px 8px;
+      border-radius: 4px;
+      font-size: 0.8125rem;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg width='8' height='5' viewBox='0 0 8 5' fill='none' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M1 1L4 4L7 1' stroke='%239CA3AF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+    }
+
+    .metric-selector select:hover {
+      background-color: #4B5563;
+    }
+
+    /* Granularity dropdown */
+    .granularity-dropdown {
+      position: relative;
+    }
+
+    .granularity-btn {
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 0.75rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      font-weight: 500;
+    }
+
+    .granularity-menu {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: #1F2937;
+      border: 1px solid #374151;
+      border-radius: 4px;
+      margin-top: 4px;
+      min-width: 100px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 50;
+    }
+
+    .granularity-menu.open {
+      display: block;
+    }
+
+    .granularity-option {
+      padding: 8px 12px;
+      cursor: pointer;
+      color: white;
+      font-size: 0.75rem;
+    }
+
+    .granularity-option:hover {
+      background: #374151;
+    }
+
+    .granularity-option:not(:last-child) {
+      border-bottom: 1px solid #374151;
+    }
+
+    .table-container {
+      background: #1A202C;
+      border-radius: 8px;
+      padding: 20px;
+      overflow-x: auto;
+      margin-bottom: 16px;
+    }
+
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .table-title {
+      font-size: 0.875rem;
+      color: #9CA3AF;
+    }
+
+    #ads-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    #ads-table th {
+      text-align: right;
+      padding: 8px 12px;
+      color: #9CA3AF;
+      font-weight: 500;
+      font-size: 0.8125rem;
+      border-bottom: 1px solid #374151;
+      white-space: nowrap;
+    }
+
+    #ads-table th:first-child {
+      text-align: left;
+    }
+
+    #ads-table td {
+      text-align: right;
+      padding: 8px 12px;
+      color: white;
+      font-size: 0.875rem;
+      border-bottom: 1px solid #2D3748;
+      white-space: nowrap;
+    }
+
+    #ads-table td:first-child {
+      text-align: left;
+      color: #9CA3AF;
+    }
+
+    #ads-table tbody tr:hover {
+      background: #1F2937;
+    }
+
+    #ads-table tfoot td {
+      font-weight: 600;
+      border-top: 2px solid #374151;
+      border-bottom: none;
+    }
+
+    @media (max-width: 600px) {
+      .table-container {
+        zoom: 0.65;
+      }
+    }
+
+    /* Column config dropdown */
+    .column-config {
+      position: relative;
+    }
+
+    .column-config-btn {
+      background: transparent;
+      border: 1px solid #374151;
+      color: #9CA3AF;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .column-config-btn:hover {
+      background: #374151;
+      color: white;
+    }
+
+    .column-config-menu {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: #1F2937;
+      border: 1px solid #374151;
+      border-radius: 8px;
+      margin-top: 4px;
+      min-width: 200px;
+      max-height: 400px;
+      overflow-y: auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 100;
+      padding: 8px 0;
+    }
+
+    .column-config-menu.open {
+      display: block;
+    }
+
+    .column-config-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      font-size: 0.8125rem;
+      cursor: pointer;
+      color: white;
+    }
+
+    .column-config-item:hover {
+      background: #374151;
+    }
+
+    .column-config-item input {
+      accent-color: #2563EB;
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Dashboard nav dropdown */
+    .nav-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+
+    .nav-dropdown-menu {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: #1F2937;
+      border: 1px solid #374151;
+      border-radius: 8px;
+      margin-top: 8px;
+      min-width: 180px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 100;
+      overflow: hidden;
+    }
+
+    .nav-dropdown-menu.open {
+      display: block;
+    }
+
+    .nav-dropdown-item {
+      display: block;
+      padding: 12px 16px;
+      color: white;
+      text-decoration: none;
+      font-size: 0.875rem;
+      border-bottom: 1px solid #374151;
+    }
+
+    .nav-dropdown-item:last-child {
+      border-bottom: none;
+    }
+
+    .nav-dropdown-item:hover {
+      background: #374151;
+    }
+
+    .nav-dropdown-item.active {
+      background: #2563EB;
+    }
+
+    /* Hamburger menu for mobile */
+    .hamburger-menu {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    @media (max-width: 600px) {
+      .hamburger-menu {
+        display: block;
+        position: absolute;
+        right: 0;
+        top: 8px;
+        transform: none;
+      }
+      .desktop-controls {
+        display: none;
+      }
+    }
+
+    .hamburger-btn {
+      background: transparent;
+      border: none;
+      padding: 8px;
+      cursor: pointer;
+      color: white;
+    }
+
+    .hamburger-dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: #1F2937;
+      border: 1px solid #374151;
+      border-radius: 8px;
+      margin-top: 4px;
+      min-width: 180px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 100;
+    }
+
+    .hamburger-dropdown.open {
+      display: block;
+    }
+
+    .menu-section {
+      padding: 8px 0;
+      border-bottom: 1px solid #374151;
+    }
+
+    .menu-section:last-child {
+      border-bottom: none;
+    }
+
+    .menu-label {
+      padding: 4px 16px;
+      font-size: 0.7rem;
+      color: #6B7280;
+      text-transform: uppercase;
+    }
+
+    .menu-option {
+      padding: 8px 16px;
+      font-size: 0.8125rem;
+      cursor: pointer;
+      color: white;
+    }
+
+    .menu-option:hover {
+      background: #374151;
+    }
+
+    .menu-option.selected {
+      background: #2563EB;
+    }
+
+    /* Password gate */
+    .password-gate {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #111827;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .password-gate.hidden {
+      display: none;
+    }
+
+    .password-box {
+      background: #1F2937;
+      padding: 32px;
+      border-radius: 12px;
+      text-align: center;
+      max-width: 320px;
+      width: 90%;
+    }
+
+    .password-box h2 {
+      margin-bottom: 8px;
+      font-size: 1.25rem;
+    }
+
+    .password-box p {
+      color: #9CA3AF;
+      margin-bottom: 20px;
+      font-size: 0.875rem;
+    }
+
+    .password-box input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #374151;
+      border-radius: 6px;
+      background: #111827;
+      color: white;
+      font-size: 16px;
+      margin-bottom: 12px;
+    }
+
+    .password-box button {
+      width: 100%;
+      padding: 12px;
+      background: #2563EB;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .password-box button:hover {
+      background: #1D4ED8;
+    }
+
+    .password-error {
+      color: #F87171;
+      font-size: 0.8125rem;
+      margin-top: 12px;
+      display: none;
+    }
+
+    .dashboard-content {
+      display: none;
+    }
+
+    .dashboard-content.visible {
+      display: block;
+    }
+
+    /* Pull to refresh spinner */
+    #ptr-spinner {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 28px;
+      height: 28px;
+      z-index: 1001;
+      pointer-events: none;
+      opacity: 0;
+      top: -40px;
+    }
+
+    #ptr-spinner.visible {
+      opacity: 1;
+    }
+
+    #ptr-spinner.refreshing svg {
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* Dark scrollbar styles */
+    ::-webkit-scrollbar {
+      height: 8px;
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #1A202C;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #4A5568;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #718096;
+    }
+  </style>
+</head>
+<body>
+  <!-- Pull to refresh spinner -->
+  <div id="ptr-spinner">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M23 4v6h-6"></path>
+      <path d="M1 20v-6h6"></path>
+      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+    </svg>
+  </div>
+
+  <!-- Password Gate -->
+  <div class="password-gate" id="password-gate">
+    <div class="password-box">
+      <h2>Brainrot Ads</h2>
+      <p>Enter password to continue</p>
+      <form onsubmit="return checkPassword(event)">
+        <input type="password" id="password-input" placeholder="Password" autocomplete="current-password">
+        <button type="submit">Enter</button>
+      </form>
+      <div id="password-error" class="password-error">Incorrect password</div>
+    </div>
+  </div>
+
+  <div class="container dashboard-content" id="dashboard-content">
+    <header class="main-header">
+      <div class="nav-dropdown">
+        <img src="brainrot-icon.png" alt="Brainrot" class="header-icon" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover;" onclick="toggleNavDropdown()">
+        <div class="nav-dropdown-menu" id="nav-dropdown-menu">
+          <a href="index.html" class="nav-dropdown-item">Brainrot Summary</a>
+          <a href="ads.html" class="nav-dropdown-item active">Brainrot Ads</a>
+        </div>
+      </div>
+      <div class="header-title">
+        <h1>Brainrot Ads</h1>
+        <div class="updated" id="updated"></div>
+      </div>
+      <!-- Hamburger menu for mobile -->
+      <div class="hamburger-menu">
+        <button class="hamburger-btn" onclick="toggleHamburgerMenu()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <div id="hamburger-dropdown" class="hamburger-dropdown">
+          <div class="menu-section">
+            <div class="menu-label">Time Range</div>
+            <div class="menu-option" onclick="selectTimeRange('24h')">Last 24 Hours</div>
+            <div class="menu-option" onclick="selectTimeRange('today')">Today</div>
+            <div class="menu-option" onclick="selectTimeRange('yesterday')">Yesterday</div>
+            <div class="menu-option" onclick="selectTimeRange('7d')">Last 7 Days</div>
+            <div class="menu-option" onclick="selectTimeRange('14d')">Last 14 Days</div>
+            <div class="menu-option" onclick="selectTimeRange('30d')">Last 30 Days</div>
+          </div>
+          <div class="menu-section">
+            <div class="menu-label">Timezone</div>
+            <div class="menu-option" onclick="selectTimezone('America/Los_Angeles')">PST</div>
+            <div class="menu-option" onclick="selectTimezone('America/New_York')">EST</div>
+          </div>
+          <div class="menu-section">
+            <div class="menu-option" onclick="fetchData(true); toggleHamburgerMenu();">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px; vertical-align: middle;">
+                <path d="M23 4v6h-6"></path>
+                <path d="M1 20v-6h6"></path>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+              Refresh
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Desktop controls -->
+      <div class="controls desktop-controls">
+        <select id="time-range" onchange="handleTimeRangeChange()">
+          <option value="24h" selected>Last 24 Hours</option>
+          <option value="today">Today</option>
+          <option value="yesterday">Yesterday</option>
+          <option value="7d">Last 7 Days</option>
+          <option value="14d">Last 14 Days</option>
+          <option value="30d">Last 30 Days</option>
+        </select>
+        <select id="timezone" onchange="render()">
+          <option value="America/Los_Angeles">PST</option>
+          <option value="America/New_York">EST</option>
+        </select>
+        <button onclick="fetchData(true)" style="padding: 6px 10px; display: flex; align-items: center; justify-content: center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 4v6h-6"></path>
+            <path d="M1 20v-6h6"></path>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-value" id="total-spend">$0</div>
+        <div class="card-label">Amount Spent</div>
+      </div>
+      <div class="card">
+        <div class="card-value" id="total-conversions">0</div>
+        <div class="card-label">Results</div>
+      </div>
+      <div class="card">
+        <div class="card-value" id="avg-cpa">$0</div>
+        <div class="card-label">Cost per Result</div>
+      </div>
+      <div class="card">
+        <div class="card-value" id="avg-roas">0.00</div>
+        <div class="card-label">Results ROAS</div>
+      </div>
+      <div class="card">
+        <div class="card-value" id="appstore-conv">0%</div>
+        <div class="card-label">App Store Conv</div>
+      </div>
+      <div class="card">
+        <div class="card-value" id="onboarding-conv">0%</div>
+        <div class="card-label">Onboarding Conv</div>
+      </div>
+    </div>
+
+    <div class="chart-container" style="position: relative; padding-top: 40px;">
+      <div style="position: absolute; top: 12px; right: 16px; z-index: 10;">
+        <div class="granularity-dropdown">
+          <button class="granularity-btn" onclick="toggleGranularityDropdown()">
+            <span id="granularity-label">Hourly</span>
+            <svg width="8" height="5" viewBox="0 0 8 5" fill="none" style="margin-top: 1px;">
+              <path d="M1 1L4 4L7 1" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="granularity-menu" id="granularity-menu">
+            <div class="granularity-option" onclick="selectGranularity('hourly')">Hourly</div>
+            <div class="granularity-option" onclick="selectGranularity('daily')">Daily</div>
+          </div>
+        </div>
+      </div>
+      <div class="chart-header">
+        <span class="chart-title">Metrics Over Time</span>
+        <div class="chart-selectors">
+          <div class="metric-selector">
+            <span class="color-dot" style="background: #F87171;"></span>
+            <select id="chart-metric-left" onchange="updateChart()">
+              <option value="spend" selected>Spend</option>
+              <option value="cpm">CPM</option>
+              <option value="cpc">CPC</option>
+              <option value="ctr">CTR</option>
+              <option value="cpa">Cost per Result</option>
+              <option value="conversions">Results</option>
+              <option value="conversion_value">Results Value</option>
+              <option value="purchase_roas">ROAS</option>
+              <option value="appstore_conv">App Store Conv</option>
+              <option value="onboarding_conv">Onboarding Conv</option>
+              <option value="impressions">Impressions</option>
+              <option value="clicks">Clicks</option>
+              <option value="app_installs">App Installs</option>
+              <option value="none">None</option>
+            </select>
+          </div>
+          <div class="metric-selector">
+            <span class="color-dot" style="background: #4ADE80;"></span>
+            <select id="chart-metric-right" onchange="updateChart()">
+              <option value="none">None</option>
+              <option value="spend">Spend</option>
+              <option value="cpm">CPM</option>
+              <option value="cpc">CPC</option>
+              <option value="ctr">CTR</option>
+              <option value="cpa" selected>Cost per Result</option>
+              <option value="conversions">Results</option>
+              <option value="conversion_value">Results Value</option>
+              <option value="purchase_roas">ROAS</option>
+              <option value="appstore_conv">App Store Conv</option>
+              <option value="onboarding_conv">Onboarding Conv</option>
+              <option value="impressions">Impressions</option>
+              <option value="clicks">Clicks</option>
+              <option value="app_installs">App Installs</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="ads-chart"></canvas>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <div class="table-header">
+        <span class="table-title">Hourly Ad Metrics</span>
+        <div class="column-config">
+          <button class="column-config-btn" onclick="toggleColumnConfig()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 3v18M3 12h18"/>
+            </svg>
+            Columns
+          </button>
+          <div class="column-config-menu" id="column-config-menu">
+            <!-- Column checkboxes will be generated here -->
+          </div>
+        </div>
+      </div>
+      <table id="ads-table">
+        <thead>
+          <tr id="ads-table-header">
+            <!-- Headers will be generated dynamically -->
+          </tr>
+        </thead>
+        <tbody id="ads-tbody">
+          <!-- Data rows will be inserted here -->
+        </tbody>
+        <tfoot>
+          <tr id="ads-totals-row">
+            <!-- Totals will be generated dynamically -->
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://tuueizexidbuvvgvxpms.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1dWVpemV4aWRidXZ2Z3Z4cG1zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MjM2NjksImV4cCI6MjA4MTM5OTY2OX0.lQ0MVBF98Jvc8qzP4M3W2osRvWQlUuCHeVTajuERi7A';
+
+    let adsData = [];
+    let chart = null;
+    let chartData = [];
+    let granularity = 'hourly';
+
+    // All available columns with their display names and formatting
+    const ALL_COLUMNS = {
+      hour: { label: 'Hour', type: 'time', alwaysShow: true },
+      spend: { label: 'Amount Spent', type: 'currency', default: true },
+      cpm: { label: 'CPM', type: 'currency', default: true },
+      ctr: { label: 'CTR', type: 'percent', default: true },
+      cpc: { label: 'CPC', type: 'currency', default: true },
+      appstore_conv: { label: 'App Store Conv', type: 'percent', default: true },
+      onboarding_conv: { label: 'Onboarding Conv', type: 'percent', default: true },
+      cpa: { label: 'Cost per Result', type: 'currency', default: true },
+      conversions: { label: 'Results', type: 'number', default: true },
+      conversion_value: { label: 'Results Value', type: 'currency', default: true },
+      purchase_roas: { label: 'Results ROAS', type: 'decimal', default: true },
+      // Additional columns (hidden by default)
+      impressions: { label: 'Impressions', type: 'number', default: false },
+      clicks: { label: 'Clicks', type: 'number', default: false },
+      reach: { label: 'Reach', type: 'number', default: false },
+      frequency: { label: 'Frequency', type: 'decimal', default: false },
+      link_clicks: { label: 'Link Clicks', type: 'number', default: false },
+      app_installs: { label: 'App Installs', type: 'number', default: false },
+      cost_per_install: { label: 'Cost per Install', type: 'currency', default: false }
+    };
+
+    // Load visible columns from localStorage or use defaults
+    // Version 2: Reset columns to new defaults
+    const COLUMNS_VERSION = 2;
+    const storedVersion = localStorage.getItem('ads_columns_version');
+    if (storedVersion !== String(COLUMNS_VERSION)) {
+      localStorage.removeItem('ads_visible_columns');
+      localStorage.setItem('ads_columns_version', COLUMNS_VERSION);
+    }
+    let visibleColumns = JSON.parse(localStorage.getItem('ads_visible_columns')) ||
+      Object.keys(ALL_COLUMNS).filter(k => ALL_COLUMNS[k].default || ALL_COLUMNS[k].alwaysShow);
+
+    function saveVisibleColumns() {
+      localStorage.setItem('ads_visible_columns', JSON.stringify(visibleColumns));
+    }
+
+    function toggleColumnConfig() {
+      const menu = document.getElementById('column-config-menu');
+      menu.classList.toggle('open');
+      if (menu.classList.contains('open')) {
+        renderColumnConfig();
+      }
+    }
+
+    function renderColumnConfig() {
+      const menu = document.getElementById('column-config-menu');
+      menu.innerHTML = '';
+
+      Object.entries(ALL_COLUMNS).forEach(([key, col]) => {
+        if (col.alwaysShow) return; // Skip hour column
+
+        const item = document.createElement('label');
+        item.className = 'column-config-item';
+        item.innerHTML = `
+          <input type="checkbox" ${visibleColumns.includes(key) ? 'checked' : ''}
+                 onchange="toggleColumn('${key}', this.checked)">
+          <span>${col.label}</span>
+        `;
+        menu.appendChild(item);
+      });
+    }
+
+    function toggleColumn(key, checked) {
+      if (checked && !visibleColumns.includes(key)) {
+        visibleColumns.push(key);
+      } else if (!checked) {
+        visibleColumns = visibleColumns.filter(k => k !== key);
+      }
+      saveVisibleColumns();
+      render();
+    }
+
+    async function fetchData(forceRefresh = false) {
+      const CACHE_KEY = 'brainrot_ads_cache';
+      const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+
+      // Check cache first
+      if (!forceRefresh) {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const cacheData = JSON.parse(cached);
+          const cacheAge = Date.now() - cacheData.timestamp;
+
+          if (cacheAge < CACHE_DURATION) {
+            adsData = cacheData.adsData;
+            updateSubtitle();
+            render();
+            return;
+          }
+        }
+      }
+
+      const headers = {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      };
+
+      try {
+        // Fetch all ads data with all metrics
+        const fetchAllAds = async () => {
+          let allData = [];
+          let offset = 0;
+          const limit = 1000;
+
+          while (true) {
+            const res = await fetch(
+              `${SUPABASE_URL}/rest/v1/meta_ads_hourly?select=*&order=hour_utc.asc&limit=${limit}&offset=${offset}`,
+              { headers }
+            );
+            const data = await res.json();
+            allData = allData.concat(data);
+
+            if (data.length < limit) break;
+            offset += limit;
+          }
+          return allData;
+        };
+
+        adsData = await fetchAllAds();
+        console.log('Ads data rows fetched:', adsData.length);
+
+        // Save to cache
+        const cacheData = {
+          timestamp: Date.now(),
+          adsData: adsData
+        };
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+
+        updateSubtitle();
+        render();
+      } catch (err) {
+        alert('Error fetching data: ' + err.message);
+      }
+    }
+
+    function updateSubtitle() {
+      const range = document.getElementById('time-range').value;
+      const labels = {
+        '24h': 'Last 24 Hours',
+        'today': 'Today',
+        'yesterday': 'Yesterday',
+        '7d': 'Last 7 Days',
+        '14d': 'Last 14 Days',
+        '30d': 'Last 30 Days'
+      };
+      document.getElementById('updated').textContent = labels[range] || range;
+    }
+
+    function getTimeRange(range) {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      switch (range) {
+        case '24h':
+          const start24h = new Date(now - 23 * 60 * 60 * 1000);
+          start24h.setMinutes(0, 0, 0);
+          return { start: start24h, end: now };
+        case 'today':
+          return { start: today, end: now };
+        case 'yesterday':
+          const yesterday = new Date(today - 24 * 60 * 60 * 1000);
+          return { start: yesterday, end: today };
+        case '7d':
+          return { start: new Date(today - 6 * 24 * 60 * 60 * 1000), end: now };
+        case '14d':
+          return { start: new Date(today - 13 * 24 * 60 * 60 * 1000), end: now };
+        case '30d':
+          return { start: new Date(today - 29 * 24 * 60 * 60 * 1000), end: now };
+        default:
+          return { start: new Date(now - 23 * 60 * 60 * 1000), end: now };
+      }
+    }
+
+    function formatValue(value, type) {
+      if (value === null || value === undefined || isNaN(value)) {
+        return type === 'currency' ? '$0.00' : type === 'percent' ? '0.00%' : '0';
+      }
+
+      switch (type) {
+        case 'currency':
+          return '$' + parseFloat(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        case 'percent':
+          return parseFloat(value).toFixed(2) + '%';
+        case 'decimal':
+          return parseFloat(value).toFixed(2);
+        case 'number':
+          return parseInt(value).toLocaleString();
+        default:
+          return value;
+      }
+    }
+
+    function render() {
+      const range = document.getElementById('time-range').value;
+      const timezone = document.getElementById('timezone').value;
+      const { start, end } = getTimeRange(range);
+
+      // Filter ads data by time range
+      const filteredAds = adsData.filter(row => {
+        const rowDate = new Date(row.hour_utc);
+        return rowDate >= start && rowDate <= end;
+      });
+
+      // Sort by hour descending (most recent first)
+      filteredAds.sort((a, b) => new Date(b.hour_utc) - new Date(a.hour_utc));
+
+      // Calculate totals
+      const totals = filteredAds.reduce((acc, row) => ({
+        spend: acc.spend + (parseFloat(row.spend) || 0),
+        clicks: acc.clicks + (parseInt(row.clicks) || 0),
+        impressions: acc.impressions + (parseInt(row.impressions) || 0),
+        conversions: acc.conversions + (parseFloat(row.conversions) || 0),
+        conversion_value: acc.conversion_value + (parseFloat(row.conversion_value) || 0),
+        reach: acc.reach + (parseInt(row.reach) || 0),
+        link_clicks: acc.link_clicks + (parseInt(row.link_clicks) || 0),
+        app_installs: acc.app_installs + (parseInt(row.app_installs) || 0)
+      }), { spend: 0, clicks: 0, impressions: 0, conversions: 0, conversion_value: 0, reach: 0, link_clicks: 0, app_installs: 0 });
+
+      // Calculate derived metrics
+      const avgCpc = totals.clicks > 0 ? totals.spend / totals.clicks : 0;
+      const avgCtr = totals.impressions > 0 ? (totals.clicks / totals.impressions) * 100 : 0;
+      const avgCpm = totals.impressions > 0 ? (totals.spend / totals.impressions) * 1000 : 0;
+      const avgCpa = totals.conversions > 0 ? totals.spend / totals.conversions : 0;
+      const avgRoas = totals.spend > 0 ? totals.conversion_value / totals.spend : 0;
+      const cardAppstoreConv = totals.link_clicks > 0 ? (totals.app_installs / totals.link_clicks) * 100 : 0;
+      const cardOnboardingConv = totals.app_installs > 0 ? (totals.conversions / totals.app_installs) * 100 : 0;
+
+      // Update cards
+      document.getElementById('total-spend').textContent = formatValue(totals.spend, 'currency');
+      document.getElementById('total-conversions').textContent = formatValue(totals.conversions, 'number');
+      document.getElementById('avg-cpa').textContent = formatValue(avgCpa, 'currency');
+      document.getElementById('avg-roas').textContent = formatValue(avgRoas, 'decimal');
+      document.getElementById('appstore-conv').textContent = formatValue(cardAppstoreConv, 'percent');
+      document.getElementById('onboarding-conv').textContent = formatValue(cardOnboardingConv, 'percent');
+
+      // Build table headers
+      const headerRow = document.getElementById('ads-table-header');
+      headerRow.innerHTML = '';
+
+      visibleColumns.forEach(colKey => {
+        const col = ALL_COLUMNS[colKey];
+        if (!col) return;
+        const th = document.createElement('th');
+        th.textContent = col.label;
+        headerRow.appendChild(th);
+      });
+
+      // Build table rows
+      const tbody = document.getElementById('ads-tbody');
+      tbody.innerHTML = '';
+
+      filteredAds.forEach(row => {
+        const tr = document.createElement('tr');
+
+        // Pre-calculate derived values
+        const spend = parseFloat(row.spend) || 0;
+        const clicks = parseInt(row.clicks) || 0;
+        const impressions = parseInt(row.impressions) || 0;
+        const conversions = parseFloat(row.conversions) || 0;
+        const appInstalls = parseInt(row.app_installs) || 0;
+        const linkClicks = parseInt(row.link_clicks) || 0;
+        const cpc = parseFloat(row.cpc) || 0;
+        const costPerInstall = appInstalls > 0 ? spend / appInstalls : 0;
+        const costPerPurchase = conversions > 0 ? spend / conversions : 0;
+
+        // App Store Conversion = Link Clicks / App Installs (what % of link clicks become installs)
+        // Actually: CPC / Cost per Install = (spend/clicks) / (spend/installs) = installs/clicks
+        const appstoreConv = linkClicks > 0 ? (appInstalls / linkClicks) * 100 : 0;
+
+        // Onboarding Conversion = App Installs / Conversions (what % of installs become purchases)
+        // Actually: Cost per Install / Cost per Purchase = (spend/installs) / (spend/conversions) = conversions/installs
+        const onboardingConv = appInstalls > 0 ? (conversions / appInstalls) * 100 : 0;
+
+        const rowValues = {
+          hour: row.hour_utc,
+          spend: spend,
+          impressions: impressions,
+          clicks: clicks,
+          ctr: parseFloat(row.ctr) || 0,
+          cpc: cpc,
+          cpm: parseFloat(row.cpm) || 0,
+          reach: parseInt(row.reach) || 0,
+          frequency: parseFloat(row.frequency) || 0,
+          link_clicks: linkClicks,
+          app_installs: appInstalls,
+          conversions: conversions,
+          conversion_value: parseFloat(row.conversion_value) || 0,
+          cpa: conversions > 0 ? spend / conversions : 0,
+          purchase_roas: parseFloat(row.purchase_roas) || 0,
+          cost_per_install: costPerInstall,
+          appstore_conv: appstoreConv,
+          onboarding_conv: onboardingConv
+        };
+
+        visibleColumns.forEach(colKey => {
+          const col = ALL_COLUMNS[colKey];
+          if (!col) return;
+
+          const td = document.createElement('td');
+
+          if (colKey === 'hour') {
+            const hourDate = new Date(row.hour_utc);
+            td.textContent = hourDate.toLocaleString('en-US', {
+              timeZone: timezone,
+              month: 'short',
+              day: 'numeric',
+              hour: 'numeric',
+              hour12: true
+            });
+          } else {
+            td.textContent = formatValue(rowValues[colKey], col.type);
+          }
+
+          tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+      });
+
+      // Build totals row
+      const totalsRow = document.getElementById('ads-totals-row');
+      totalsRow.innerHTML = '';
+
+      // Calculate total conversion rates
+      const totalCostPerInstall = totals.app_installs > 0 ? totals.spend / totals.app_installs : 0;
+      const totalAppstoreConv = totals.link_clicks > 0 ? (totals.app_installs / totals.link_clicks) * 100 : 0;
+      const totalOnboardingConv = totals.app_installs > 0 ? (totals.conversions / totals.app_installs) * 100 : 0;
+
+      const totalValues = {
+        hour: 'Total',
+        spend: totals.spend,
+        impressions: totals.impressions,
+        clicks: totals.clicks,
+        ctr: avgCtr,
+        cpc: avgCpc,
+        cpm: avgCpm,
+        reach: totals.reach,
+        frequency: totals.reach > 0 ? totals.impressions / totals.reach : 0,
+        link_clicks: totals.link_clicks,
+        app_installs: totals.app_installs,
+        conversions: totals.conversions,
+        conversion_value: totals.conversion_value,
+        cpa: avgCpa,
+        purchase_roas: avgRoas,
+        cost_per_install: totalCostPerInstall,
+        appstore_conv: totalAppstoreConv,
+        onboarding_conv: totalOnboardingConv
+      };
+
+      visibleColumns.forEach(colKey => {
+        const col = ALL_COLUMNS[colKey];
+        if (!col) return;
+
+        const td = document.createElement('td');
+
+        if (colKey === 'hour') {
+          td.textContent = 'Total';
+        } else {
+          td.textContent = formatValue(totalValues[colKey], col.type);
+        }
+
+        totalsRow.appendChild(td);
+      });
+
+      // If no data
+      if (filteredAds.length === 0) {
+        tbody.innerHTML = '';
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = visibleColumns.length;
+        td.style.textAlign = 'center';
+        td.style.padding = '24px';
+        td.style.color = '#6B7280';
+        td.textContent = 'No data for this time period';
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+      }
+
+      // Prepare chart data (sorted ascending for chart)
+      const chartAds = [...filteredAds].sort((a, b) => new Date(a.hour_utc) - new Date(b.hour_utc));
+
+      if (granularity === 'daily') {
+        // Aggregate hourly data into daily buckets
+        const dailyMap = new Map();
+        chartAds.forEach(row => {
+          const date = new Date(row.hour_utc);
+          const dayKey = date.toISOString().slice(0, 10); // YYYY-MM-DD
+
+          if (!dailyMap.has(dayKey)) {
+            dailyMap.set(dayKey, {
+              hour: dayKey + 'T12:00:00Z', // Use noon for display
+              spend: 0,
+              impressions: 0,
+              clicks: 0,
+              conversions: 0,
+              conversion_value: 0,
+              link_clicks: 0,
+              app_installs: 0
+            });
+          }
+
+          const day = dailyMap.get(dayKey);
+          day.spend += parseFloat(row.spend) || 0;
+          day.impressions += parseInt(row.impressions) || 0;
+          day.clicks += parseInt(row.clicks) || 0;
+          day.conversions += parseFloat(row.conversions) || 0;
+          day.conversion_value += parseFloat(row.conversion_value) || 0;
+          day.link_clicks += parseInt(row.link_clicks) || 0;
+          day.app_installs += parseInt(row.app_installs) || 0;
+        });
+
+        // Convert to chart data with calculated metrics
+        chartData = Array.from(dailyMap.values()).map(day => ({
+          hour: day.hour,
+          spend: day.spend,
+          cpm: day.impressions > 0 ? (day.spend / day.impressions) * 1000 : 0,
+          cpc: day.clicks > 0 ? day.spend / day.clicks : 0,
+          ctr: day.impressions > 0 ? (day.clicks / day.impressions) * 100 : 0,
+          cpa: day.conversions > 0 ? day.spend / day.conversions : 0,
+          conversions: day.conversions,
+          conversion_value: day.conversion_value,
+          purchase_roas: day.spend > 0 ? day.conversion_value / day.spend : 0,
+          appstore_conv: day.link_clicks > 0 ? (day.app_installs / day.link_clicks) * 100 : 0,
+          onboarding_conv: day.app_installs > 0 ? (day.conversions / day.app_installs) * 100 : 0,
+          impressions: day.impressions,
+          clicks: day.clicks,
+          app_installs: day.app_installs
+        }));
+      } else {
+        // Hourly data - no aggregation needed
+        chartData = chartAds.map(row => {
+          const spend = parseFloat(row.spend) || 0;
+          const impressions = parseInt(row.impressions) || 0;
+          const clicks = parseInt(row.clicks) || 0;
+          const conversions = parseFloat(row.conversions) || 0;
+          const conversionValue = parseFloat(row.conversion_value) || 0;
+          const linkClicks = parseInt(row.link_clicks) || 0;
+          const appInstalls = parseInt(row.app_installs) || 0;
+
+          return {
+            hour: row.hour_utc,
+            spend: spend,
+            cpm: impressions > 0 ? (spend / impressions) * 1000 : 0,
+            cpc: clicks > 0 ? spend / clicks : 0,
+            ctr: impressions > 0 ? (clicks / impressions) * 100 : 0,
+            cpa: conversions > 0 ? spend / conversions : 0,
+            conversions: conversions,
+            conversion_value: conversionValue,
+            purchase_roas: spend > 0 ? conversionValue / spend : 0,
+            appstore_conv: linkClicks > 0 ? (appInstalls / linkClicks) * 100 : 0,
+            onboarding_conv: appInstalls > 0 ? (conversions / appInstalls) * 100 : 0,
+            impressions: impressions,
+            clicks: clicks,
+            app_installs: appInstalls
+          };
+        });
+      }
+
+      updateChart();
+    }
+
+    function formatChartLabel(hourUtc) {
+      const timezone = document.getElementById('timezone').value;
+      const date = new Date(hourUtc);
+
+      if (granularity === 'daily') {
+        return date.toLocaleDateString('en-US', {
+          timeZone: timezone,
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric'
+        });
+      }
+
+      const dateStr = date.toLocaleDateString('en-US', {
+        timeZone: timezone,
+        weekday: 'short'
+      });
+      const timeStr = date.toLocaleTimeString('en-US', {
+        timeZone: timezone,
+        hour: 'numeric'
+      });
+      return `${dateStr}, ${timeStr.toLowerCase()}`;
+    }
+
+    // Metric configuration for chart
+    const CHART_METRICS = {
+      spend: { label: 'Spend', type: 'currency' },
+      cpm: { label: 'CPM', type: 'currency' },
+      cpc: { label: 'CPC', type: 'currency' },
+      ctr: { label: 'CTR', type: 'percent' },
+      cpa: { label: 'Cost per Result', type: 'currency' },
+      conversions: { label: 'Results', type: 'number' },
+      conversion_value: { label: 'Results Value', type: 'currency' },
+      purchase_roas: { label: 'ROAS', type: 'decimal' },
+      appstore_conv: { label: 'App Store Conv', type: 'percent' },
+      onboarding_conv: { label: 'Onboarding Conv', type: 'percent' },
+      impressions: { label: 'Impressions', type: 'number' },
+      clicks: { label: 'Clicks', type: 'number' },
+      app_installs: { label: 'App Installs', type: 'number' }
+    };
+
+    function formatChartValue(value, type) {
+      if (value === null || value === undefined || isNaN(value)) return '0';
+      switch (type) {
+        case 'currency':
+          return '$' + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        case 'percent':
+          return value.toFixed(2) + '%';
+        case 'decimal':
+          return value.toFixed(2);
+        case 'number':
+          return Math.round(value).toLocaleString();
+        default:
+          return value.toString();
+      }
+    }
+
+    function formatChartAxisValue(value, type) {
+      if (value === null || value === undefined || isNaN(value)) return '0';
+      switch (type) {
+        case 'currency':
+          if (value >= 1000) return '$' + (value / 1000).toFixed(1) + 'K';
+          return '$' + value.toFixed(0);
+        case 'percent':
+          return value.toFixed(1) + '%';
+        case 'decimal':
+          return value.toFixed(2);
+        case 'number':
+          if (value >= 1000) return (value / 1000).toFixed(1) + 'K';
+          return Math.round(value).toString();
+        default:
+          return value.toString();
+      }
+    }
+
+    function updateChart() {
+      const leftMetric = document.getElementById('chart-metric-left').value;
+      const rightMetric = document.getElementById('chart-metric-right').value;
+
+      const labels = chartData.map(d => formatChartLabel(d.hour));
+      const datasets = [];
+
+      if (leftMetric !== 'none' && CHART_METRICS[leftMetric]) {
+        datasets.push({
+          label: CHART_METRICS[leftMetric].label,
+          data: chartData.map(d => d[leftMetric]),
+          borderColor: '#F87171',
+          backgroundColor: 'rgba(248, 113, 113, 0.3)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0,
+          pointRadius: 0,
+          yAxisID: 'y',
+          metricType: CHART_METRICS[leftMetric].type
+        });
+      }
+
+      if (rightMetric !== 'none' && CHART_METRICS[rightMetric]) {
+        datasets.push({
+          label: CHART_METRICS[rightMetric].label,
+          data: chartData.map(d => d[rightMetric]),
+          borderColor: '#4ADE80',
+          backgroundColor: 'rgba(74, 222, 128, 0.3)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0,
+          pointRadius: 0,
+          yAxisID: 'y1',
+          metricType: CHART_METRICS[rightMetric].type
+        });
+      }
+
+      const leftType = leftMetric !== 'none' && CHART_METRICS[leftMetric] ? CHART_METRICS[leftMetric].type : null;
+      const rightType = rightMetric !== 'none' && CHART_METRICS[rightMetric] ? CHART_METRICS[rightMetric].type : null;
+
+      if (chart) chart.destroy();
+
+      chart = new Chart(document.getElementById('ads-chart'), {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          animation: false,
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false,
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              enabled: true,
+              backgroundColor: 'rgba(31, 41, 55, 0.95)',
+              titleColor: '#fff',
+              bodyColor: '#fff',
+              borderColor: '#374151',
+              borderWidth: 1,
+              padding: 12,
+              callbacks: {
+                title: function(items) {
+                  return items[0].label;
+                },
+                label: function(context) {
+                  const metricType = context.dataset.metricType;
+                  return `${context.dataset.label}: ${formatChartValue(context.raw, metricType)}`;
+                }
+              }
+            },
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: '#666666',
+                font: { size: 11 },
+                maxRotation: 0,
+                minRotation: 0,
+                autoSkip: true,
+                maxTicksLimit: 12,
+                callback: function(value, index) {
+                  if (index === 0) return '';
+                  return this.getLabelForValue(value);
+                },
+              },
+              grid: {
+                display: true,
+                drawOnChartArea: false,
+                drawTicks: true,
+                tickLength: 5,
+                tickColor: '#666666',
+              },
+            },
+            y: {
+              type: 'linear',
+              display: leftMetric !== 'none',
+              position: 'left',
+              ticks: {
+                color: '#F87171',
+                font: { size: 11 },
+                callback: v => formatChartAxisValue(v, leftType),
+              },
+              grid: {
+                color: '#374151',
+                drawBorder: false,
+              },
+            },
+            y1: {
+              type: 'linear',
+              display: rightMetric !== 'none',
+              position: 'right',
+              ticks: {
+                color: '#4ADE80',
+                font: { size: 11 },
+                callback: v => formatChartAxisValue(v, rightType),
+              },
+              grid: {
+                drawOnChartArea: false,
+              },
+            },
+          },
+        },
+      });
+    }
+
+    function handleTimeRangeChange() {
+      const range = document.getElementById('time-range').value;
+
+      // Auto-switch granularity based on time range
+      // For 7 days or more, default to daily
+      // For 24h, today, yesterday, default to hourly
+      if (range === '7d' || range === '14d' || range === '30d') {
+        if (granularity === 'hourly') {
+          selectGranularity('daily');
+        }
+      } else if (range === '24h' || range === 'today' || range === 'yesterday') {
+        if (granularity === 'daily') {
+          selectGranularity('hourly');
+        }
+      }
+
+      updateSubtitle();
+      updateHamburgerMenuSelection();
+      render();
+    }
+
+    function toggleGranularityDropdown() {
+      const menu = document.getElementById('granularity-menu');
+      menu.classList.toggle('open');
+    }
+
+    function selectGranularity(g) {
+      granularity = g;
+      document.getElementById('granularity-label').textContent = g === 'hourly' ? 'Hourly' : 'Daily';
+      document.getElementById('granularity-menu').classList.remove('open');
+      render();
+    }
+
+    function toggleNavDropdown() {
+      const menu = document.getElementById('nav-dropdown-menu');
+      menu.classList.toggle('open');
+    }
+
+    function toggleHamburgerMenu() {
+      const dropdown = document.getElementById('hamburger-dropdown');
+      dropdown.classList.toggle('open');
+    }
+
+    function selectTimeRange(value) {
+      document.getElementById('time-range').value = value;
+      updateHamburgerMenuSelection();
+      handleTimeRangeChange();
+      toggleHamburgerMenu();
+    }
+
+    function selectTimezone(value) {
+      document.getElementById('timezone').value = value;
+      updateHamburgerMenuSelection();
+      render();
+      toggleHamburgerMenu();
+    }
+
+    function updateHamburgerMenuSelection() {
+      const timeRange = document.getElementById('time-range').value;
+      const timezone = document.getElementById('timezone').value;
+
+      document.querySelectorAll('.hamburger-dropdown .menu-option').forEach(opt => {
+        opt.classList.remove('selected');
+      });
+
+      const timeLabels = {
+        '24h': 'Last 24 Hours',
+        'today': 'Today',
+        'yesterday': 'Yesterday',
+        '7d': 'Last 7 Days',
+        '14d': 'Last 14 Days',
+        '30d': 'Last 30 Days'
+      };
+      const tzLabels = {
+        'America/Los_Angeles': 'PST',
+        'America/New_York': 'EST'
+      };
+
+      document.querySelectorAll('.hamburger-dropdown .menu-option').forEach(opt => {
+        if (opt.textContent === timeLabels[timeRange] || opt.textContent === tzLabels[timezone]) {
+          opt.classList.add('selected');
+        }
+      });
+    }
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+      const navDropdown = document.getElementById('nav-dropdown-menu');
+      const hamburgerDropdown = document.getElementById('hamburger-dropdown');
+      const columnConfigMenu = document.getElementById('column-config-menu');
+      const granularityMenu = document.getElementById('granularity-menu');
+
+      if (!e.target.closest('.nav-dropdown')) {
+        navDropdown.classList.remove('open');
+      }
+      if (!e.target.closest('.hamburger-menu')) {
+        hamburgerDropdown.classList.remove('open');
+      }
+      if (!e.target.closest('.column-config')) {
+        columnConfigMenu.classList.remove('open');
+      }
+      if (!e.target.closest('.granularity-dropdown')) {
+        granularityMenu.classList.remove('open');
+      }
+    });
+
+    // Password gate
+    const CORRECT_PASSWORD_HASH = '107458b366671198f2e4845cc0a436f532c1e5db47d61c79d2ad11aa419cc980';
+
+    async function hashPassword(password) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(password);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function checkPassword(event) {
+      event.preventDefault();
+      const password = document.getElementById('password-input').value;
+      const hash = await hashPassword(password);
+
+      if (hash === CORRECT_PASSWORD_HASH) {
+        localStorage.setItem('brainrot_auth', hash);
+        showDashboard();
+      } else {
+        document.getElementById('password-error').style.display = 'block';
+        document.getElementById('password-input').value = '';
+      }
+      return false;
+    }
+
+    function showDashboard() {
+      document.getElementById('password-gate').classList.add('hidden');
+      document.getElementById('dashboard-content').classList.add('visible');
+      fetchData();
+    }
+
+    // Check if already authenticated
+    async function checkAuth() {
+      const storedHash = localStorage.getItem('brainrot_auth');
+      if (storedHash === CORRECT_PASSWORD_HASH) {
+        showDashboard();
+      }
+    }
+
+    checkAuth();
+
+    // Pull to refresh (mobile only)
+    let pullStartY = 0;
+    let currentPullDistance = 0;
+    let isPulling = false;
+    let isRefreshing = false;
+    let hasTriggeredHaptic = false;
+    const pullThreshold = 60;
+    const maxPull = 120;
+
+    const spinner = document.getElementById('ptr-spinner');
+    const dashboard = document.getElementById('dashboard-content');
+
+    function haptic(style = 'light') {
+      if ('vibrate' in navigator) {
+        if (style === 'light') navigator.vibrate(10);
+        else if (style === 'medium') navigator.vibrate(20);
+        else if (style === 'success') navigator.vibrate([10, 50, 20]);
+      }
+    }
+
+    document.addEventListener('touchstart', (e) => {
+      if (isRefreshing) return;
+      if (window.scrollY <= 0) {
+        pullStartY = e.touches[0].clientY;
+        isPulling = true;
+        hasTriggeredHaptic = false;
+        currentPullDistance = 0;
+        dashboard.style.transition = 'none';
+        spinner.style.transition = 'none';
+      }
+    }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+      if (!isPulling || isRefreshing) return;
+
+      const currentY = e.touches[0].clientY;
+      const rawPull = currentY - pullStartY;
+
+      if (rawPull > 0 && window.scrollY <= 0) {
+        const resistance = Math.max(0.4 - (rawPull / 1000), 0.2);
+        currentPullDistance = Math.min(rawPull * resistance, maxPull);
+
+        dashboard.style.transform = `translateY(${currentPullDistance}px)`;
+        spinner.style.top = `${currentPullDistance - 30}px`;
+        spinner.style.opacity = Math.min(currentPullDistance / pullThreshold, 1);
+        spinner.classList.add('visible');
+
+        const rotation = (currentPullDistance / pullThreshold) * 360;
+        spinner.querySelector('svg').style.transform = `rotate(${rotation}deg)`;
+
+        if (currentPullDistance >= pullThreshold && !hasTriggeredHaptic) {
+          haptic('medium');
+          hasTriggeredHaptic = true;
+        }
+      }
+    }, { passive: true });
+
+    document.addEventListener('touchend', () => {
+      if (!isPulling) return;
+
+      if (currentPullDistance >= pullThreshold && !isRefreshing) {
+        isRefreshing = true;
+        haptic('success');
+
+        dashboard.style.transition = 'transform 0.2s ease-out';
+        dashboard.style.transform = 'translateY(50px)';
+        spinner.style.transition = 'top 0.2s ease-out';
+        spinner.style.top = '20px';
+        spinner.classList.add('refreshing');
+
+        fetchData(true).then(() => {
+          setTimeout(() => {
+            dashboard.style.transition = 'transform 0.3s ease-out';
+            dashboard.style.transform = 'translateY(0)';
+            spinner.style.transition = 'opacity 0.2s ease-out, top 0.3s ease-out';
+            spinner.style.opacity = '0';
+            spinner.style.top = '-40px';
+
+            setTimeout(() => {
+              spinner.classList.remove('visible', 'refreshing');
+              isRefreshing = false;
+            }, 300);
+          }, 500);
+        });
+      } else {
+        dashboard.style.transition = 'transform 0.3s ease-out';
+        dashboard.style.transform = 'translateY(0)';
+        spinner.style.transition = 'opacity 0.2s ease-out, top 0.3s ease-out';
+        spinner.style.opacity = '0';
+        spinner.style.top = '-40px';
+
+        setTimeout(() => {
+          spinner.classList.remove('visible');
+        }, 300);
+      }
+
+      isPulling = false;
+      currentPullDistance = 0;
+    }, { passive: true });
+
+    // Init
+    updateHamburgerMenuSelection();
+  </script>
+</body>
+</html>
