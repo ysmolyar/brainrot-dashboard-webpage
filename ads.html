@@ -723,12 +723,12 @@
         <div class="card-label">Results ROAS</div>
       </div>
       <div class="card">
-        <div class="card-value" id="appstore-conv">0%</div>
-        <div class="card-label">App Store Conv</div>
+        <div class="card-value" id="avg-ctr">0%</div>
+        <div class="card-label">CTR</div>
       </div>
       <div class="card">
-        <div class="card-value" id="onboarding-conv">0%</div>
-        <div class="card-label">Onboarding Conv</div>
+        <div class="card-value" id="avg-cpc">$0.00</div>
+        <div class="card-label">CPC</div>
       </div>
     </div>
 
@@ -1071,8 +1071,8 @@
       document.getElementById('total-conversions').textContent = formatValue(totals.conversions, 'number');
       document.getElementById('avg-cpa').textContent = formatValue(avgCpa, 'currency');
       document.getElementById('avg-roas').textContent = formatValue(avgRoas, 'decimal');
-      document.getElementById('appstore-conv').textContent = formatValue(cardAppstoreConv, 'percent');
-      document.getElementById('onboarding-conv').textContent = formatValue(cardOnboardingConv, 'percent');
+      document.getElementById('avg-ctr').textContent = formatValue(avgCtr, 'percent');
+      document.getElementById('avg-cpc').textContent = formatValue(avgCpc, 'currency');
 
       // Build table headers
       const headerRow = document.getElementById('ads-table-header');
