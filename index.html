@@ -827,8 +827,8 @@
 
       switch (range) {
         case '24h':
-          // Start at the beginning of the hour 24 hours ago to capture all data in that hour
-          const start24h = new Date(now - 24 * 60 * 60 * 1000);
+          // Start at the beginning of the hour 23 hours ago to get 24 total periods (current hour + 23 previous)
+          const start24h = new Date(now - 23 * 60 * 60 * 1000);
           start24h.setMinutes(0, 0, 0);
           return { start: start24h, end: now };
         case 'today':
