@@ -56,10 +56,10 @@
 
     @media (max-width: 600px) {
       header { gap: 8px; margin-bottom: 12px; }
-      .main-header { min-height: 50px; padding-top: 8px; }
-      .header-icon { position: absolute; left: 0; top: 8px; transform: none; }
-      .header-title { position: absolute; left: 50%; top: 8px; transform: translateX(-50%); }
-      .hamburger-menu { top: 8px; }
+      .main-header { min-height: 44px; }
+      .header-icon { position: absolute; left: 0; top: 50%; transform: translateY(-50%); }
+      .header-title { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+      .hamburger-menu { top: 50%; transform: translateY(-50%); }
       h1 { font-size: 1.25rem; }
       button, select {
         padding: 6px 10px;
@@ -202,7 +202,8 @@
       display: none;
       position: absolute;
       right: 0;
-      top: 0;
+      top: 50%;
+      transform: translateY(-50%);
     }
     .hamburger-btn {
       background: transparent;
