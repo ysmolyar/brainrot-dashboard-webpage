@@ -47,7 +47,7 @@
       .container { padding: 0; }
     }
     header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
-    .main-header { position: relative; }
+    .main-header { position: relative; z-index: 1000; }
     .header-icon { position: absolute; left: 0; top: 50%; transform: translateY(-50%); }
     .header-title { position: absolute; left: 50%; transform: translateX(-50%); text-align: center; }
     .main-header .controls { margin-left: auto; }
@@ -223,7 +223,7 @@
       border-radius: 8px;
       min-width: 180px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      z-index: 100;
+      z-index: 1000;
       overflow: hidden;
     }
     .hamburger-dropdown.open {
