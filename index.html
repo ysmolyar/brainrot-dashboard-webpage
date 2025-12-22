@@ -426,6 +426,69 @@
     .dashboard-content.visible {
       display: block;
     }
+
+    /* Skeleton loading styles */
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .skeleton {
+      background: linear-gradient(90deg, #374151 25%, #4B5563 50%, #374151 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 4px;
+    }
+    .skeleton-card-value {
+      height: 36px;
+      width: 80%;
+      margin-bottom: 8px;
+    }
+    .skeleton-card-label {
+      height: 12px;
+      width: 60%;
+    }
+    .skeleton-chart {
+      height: 100%;
+      width: 100%;
+      border-radius: 8px;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    .skeleton-table-row {
+      height: 24px;
+      width: 100%;
+      margin-bottom: 8px;
+    }
+    .skeleton-transaction-row {
+      display: flex;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid #2D3748;
+    }
+    .skeleton-transaction-row .skeleton {
+      height: 20px;
+    }
+    .loading-content .card-value,
+    .loading-content .card-label {
+      opacity: 0;
+    }
+    .loading-content #chart {
+      opacity: 0;
+    }
+    .loading-content #data-table {
+      opacity: 0;
+    }
+    .loading-content #transactions-table {
+      opacity: 0;
+    }
+    .loading-content .skeleton-overlay {
+      display: block;
+    }
+    .skeleton-overlay {
+      display: none;
+    }
+
     /* Pull to refresh styles */
     .ptr-wrapper {
       position: relative;
@@ -559,26 +622,32 @@
 
     <div class="cards">
       <div class="card">
+        <div class="skeleton-overlay"><div class="skeleton skeleton-card-value"></div><div class="skeleton skeleton-card-label"></div></div>
         <div class="card-value" id="total-proceeds" style="color: white;">$0</div>
         <div class="card-label">Total Proceeds</div>
       </div>
       <div class="card">
+        <div class="skeleton-overlay"><div class="skeleton skeleton-card-value"></div><div class="skeleton skeleton-card-label"></div></div>
         <div class="card-value" id="total-spend" style="color: white;">$0</div>
         <div class="card-label">Ad Spend</div>
       </div>
       <div class="card">
+        <div class="skeleton-overlay"><div class="skeleton skeleton-card-value"></div><div class="skeleton skeleton-card-label"></div></div>
         <div class="card-value" id="total-conversions" style="color: white;">0</div>
         <div class="card-label">Total Conv's</div>
       </div>
       <div class="card">
+        <div class="skeleton-overlay"><div class="skeleton skeleton-card-value"></div><div class="skeleton skeleton-card-label"></div></div>
         <div class="card-value" id="initial-conversions" style="color: white;">0</div>
         <div class="card-label">Initial Conv's</div>
       </div>
       <div class="card">
+        <div class="skeleton-overlay"><div class="skeleton skeleton-card-value"></div><div class="skeleton skeleton-card-label"></div></div>
         <div class="card-value" id="net-profit" style="color: white;">$0</div>
         <div class="card-label">Net Profit</div>
       </div>
       <div class="card">
+        <div class="skeleton-overlay"><div class="skeleton skeleton-card-value"></div><div class="skeleton skeleton-card-label"></div></div>
         <div class="card-value" id="roas" style="color: white;">0.00</div>
         <div class="card-label">ROAS</div>
       </div>
@@ -600,11 +669,18 @@
         </div>
       </div>
       <div class="chart-wrapper">
+        <div class="skeleton-overlay skeleton skeleton-chart"></div>
         <canvas id="chart"></canvas>
       </div>
     </div>
 
     <div class="chart-container" style="overflow-x: auto; background: #1A202C; padding: 20px;">
+      <div class="skeleton-overlay" style="padding: 0 20px;">
+        <div class="skeleton skeleton-table-row" style="width: 100%;"></div>
+        <div class="skeleton skeleton-table-row" style="width: 95%;"></div>
+        <div class="skeleton skeleton-table-row" style="width: 90%;"></div>
+        <div class="skeleton skeleton-table-row" style="width: 85%;"></div>
+      </div>
       <table id="data-table">
         <thead>
           <tr id="table-header" style="border-bottom: 1px solid #2D3748;">
@@ -664,6 +740,13 @@
       <div style="margin-bottom: 20px;">
         <h2 style="font-size: 1rem; color: white; font-weight: 500;">Recent Transactions</h2>
       </div>
+      <div class="skeleton-overlay" id="transactions-skeleton">
+        <div class="skeleton-transaction-row"><div class="skeleton" style="width: 100px;"></div><div class="skeleton" style="width: 80px;"></div><div class="skeleton" style="width: 60px;"></div><div class="skeleton" style="width: 50px;"></div><div class="skeleton" style="width: 120px;"></div></div>
+        <div class="skeleton-transaction-row"><div class="skeleton" style="width: 100px;"></div><div class="skeleton" style="width: 80px;"></div><div class="skeleton" style="width: 60px;"></div><div class="skeleton" style="width: 50px;"></div><div class="skeleton" style="width: 120px;"></div></div>
+        <div class="skeleton-transaction-row"><div class="skeleton" style="width: 100px;"></div><div class="skeleton" style="width: 80px;"></div><div class="skeleton" style="width: 60px;"></div><div class="skeleton" style="width: 50px;"></div><div class="skeleton" style="width: 120px;"></div></div>
+        <div class="skeleton-transaction-row"><div class="skeleton" style="width: 100px;"></div><div class="skeleton" style="width: 80px;"></div><div class="skeleton" style="width: 60px;"></div><div class="skeleton" style="width: 50px;"></div><div class="skeleton" style="width: 120px;"></div></div>
+        <div class="skeleton-transaction-row"><div class="skeleton" style="width: 100px;"></div><div class="skeleton" style="width: 80px;"></div><div class="skeleton" style="width: 60px;"></div><div class="skeleton" style="width: 50px;"></div><div class="skeleton" style="width: 120px;"></div></div>
+      </div>
       <div class="transactions-wrapper" style="overflow-x: auto;">
         <table id="transactions-table" style="width: 100%; border-collapse: collapse;">
           <thead>
@@ -696,29 +779,35 @@
     let granularity = 'hourly';
     let chart = null;
     let adsData = [];
-    let revenueData = [];
+    let revenueData = [];  // Lightweight data for charts (no raw_payload)
+    let transactionsData = [];  // Full data for transactions table (with raw_payload)
     let processedData = [];
     let showAllTransactions = false;
 
     async function fetchData(forceRefresh = false) {
       const CACHE_KEY = 'brainrot_dashboard_cache';
       const SUPERWALL_CACHE_KEY = 'brainrot_superwall_cache'; // Shared across pages
+      const TRANSACTIONS_CACHE_KEY = 'brainrot_transactions_cache';
       const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
 
       // Check cache first
       if (!forceRefresh) {
         const cached = localStorage.getItem(CACHE_KEY);
         const superwallCached = localStorage.getItem(SUPERWALL_CACHE_KEY);
+        const transactionsCached = localStorage.getItem(TRANSACTIONS_CACHE_KEY);
 
-        if (cached && superwallCached) {
+        if (cached && superwallCached && transactionsCached) {
           const cacheData = JSON.parse(cached);
           const swCache = JSON.parse(superwallCached);
+          const txCache = JSON.parse(transactionsCached);
           const cacheAge = Date.now() - cacheData.timestamp;
           const swCacheAge = Date.now() - swCache.timestamp;
+          const txCacheAge = Date.now() - txCache.timestamp;
 
-          if (cacheAge < CACHE_DURATION && swCacheAge < CACHE_DURATION) {
+          if (cacheAge < CACHE_DURATION && swCacheAge < CACHE_DURATION && txCacheAge < CACHE_DURATION) {
             adsData = cacheData.adsData;
             revenueData = swCache.data;
+            transactionsData = txCache.data;
             updateSubtitle();
             render();
             return;
@@ -731,35 +820,53 @@
         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
       };
 
-      try {
-        // Fetch ads data
-        const adsRes = await fetch(`${SUPABASE_URL}/rest/v1/meta_ads_hourly?select=hour_utc,spend&order=hour_utc.asc`, { headers });
-        adsData = await adsRes.json();
+      // Calculate 180-day cutoff for time filter
+      const cutoffDate = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString();
 
-        // Fetch revenue data with pagination (Supabase limits to 1000 per request)
-        const fetchAllRevenue = async () => {
+      try {
+        // Fetch lightweight revenue data for charts (no raw_payload, with pagination)
+        const fetchChartRevenue = async () => {
           let allData = [];
           let offset = 0;
           const limit = 1000;
 
           while (true) {
             const res = await fetch(
-              `${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type,user_id,product_id,is_refund,raw_payload&order=created_at.asc&limit=${limit}&offset=${offset}`,
+              `${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type,product_id&created_at=gte.${cutoffDate}&order=created_at.asc&limit=${limit}&offset=${offset}`,
               { headers }
             );
             const data = await res.json();
             allData = allData.concat(data);
 
-            if (data.length < limit) break; // No more data
+            if (data.length < limit) break;
             offset += limit;
           }
           return allData;
         };
 
-        revenueData = await fetchAllRevenue();
+        // Fetch recent transactions with full data (including raw_payload) - just 50 most recent
+        const fetchRecentTransactions = async () => {
+          const res = await fetch(
+            `${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type,user_id,product_id,is_refund,raw_payload&order=created_at.desc&limit=50`,
+            { headers }
+          );
+          return await res.json();
+        };
+
+        // Fetch all data in parallel
+        const [adsRes, chartRevenueData, recentTransactions] = await Promise.all([
+          fetch(`${SUPABASE_URL}/rest/v1/meta_ads_hourly?select=hour_utc,spend&order=hour_utc.asc`, { headers }),
+          fetchChartRevenue(),
+          fetchRecentTransactions()
+        ]);
+
+        adsData = await adsRes.json();
+        revenueData = chartRevenueData;
+        transactionsData = recentTransactions;
 
         console.log('Ads data rows fetched:', adsData.length);
         console.log('Revenue data rows fetched:', revenueData.length);
+        console.log('Transactions data rows fetched:', transactionsData.length);
 
         // Save ads data to its own cache (small)
         localStorage.setItem(CACHE_KEY, JSON.stringify({
@@ -767,10 +874,16 @@
           adsData: adsData
         }));
 
-        // Save Superwall data to shared cache (used by both pages)
+        // Save lightweight Superwall data to shared cache (used by both pages)
         localStorage.setItem(SUPERWALL_CACHE_KEY, JSON.stringify({
           timestamp: Date.now(),
           data: revenueData
+        }));
+
+        // Save transactions data to separate cache
+        localStorage.setItem(TRANSACTIONS_CACHE_KEY, JSON.stringify({
+          timestamp: Date.now(),
+          data: transactionsData
         }));
 
         updateSubtitle();
@@ -1012,6 +1125,7 @@
       updateChart();
       updateTable();
       updateTransactions();
+      hideSkeletons();
     }
 
     function formatLabel(bucket) {
@@ -1479,10 +1593,8 @@
       const tbody = document.getElementById('transactions-tbody');
       tbody.innerHTML = '';
 
-      // Sort revenue data by created_at descending (most recent first)
-      const sortedTransactions = [...revenueData].sort((a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
+      // transactionsData is already sorted by created_at desc from the API
+      const sortedTransactions = transactionsData;
 
       // Determine how many to show (initial 16, max 50)
       const initialShow = 16;
@@ -1762,8 +1874,15 @@
 
     function showDashboard() {
       document.getElementById('password-gate').classList.add('hidden');
-      document.getElementById('dashboard-content').classList.add('visible');
+      const dashboard = document.getElementById('dashboard-content');
+      dashboard.classList.add('visible');
+      dashboard.classList.add('loading-content');
       fetchData();
+    }
+
+    function hideSkeletons() {
+      const dashboard = document.getElementById('dashboard-content');
+      dashboard.classList.remove('loading-content');
     }
 
     // Check if already authenticated
