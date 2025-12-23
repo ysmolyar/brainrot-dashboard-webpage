@@ -690,9 +690,7 @@
       const navItems = document.querySelectorAll('.nav-dropdown-item');
       navItems.forEach(item => {
         const href = item.getAttribute('href');
-        // For smolworks, also match when no app param is present (default)
-        const isActive = href.includes(`app=${APP_ID}`) ||
-          (APP_ID === 'smolworks' && !window.location.search.includes('app='));
+        const isActive = href.includes(`app=${APP_ID}`);
         item.classList.toggle('active', isActive);
       });
 
