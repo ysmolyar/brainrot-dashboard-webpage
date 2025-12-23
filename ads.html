@@ -26,88 +26,16 @@
   <meta name="apple-mobile-web-app-title" content="Brainrot">
   <link rel="manifest" href="manifest.json">
 
+  <!-- Shared styles -->
+  <link rel="stylesheet" href="shared.css">
+
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+  <script src="shared.js"></script>
 
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #111827;
-      color: white;
-      padding: 16px;
-      min-height: 100vh;
-    }
-    .container { max-width: 1000px; margin: 0 auto; width: 100%; }
-
-    /* Mobile-specific adjustments */
-    @media (max-width: 600px) {
-      body { padding: 8px; }
-      .container { padding: 0; }
-    }
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
-    .main-header { position: relative; }
-    .header-icon { position: absolute; left: 0; top: 50%; transform: translateY(-50%); cursor: pointer; }
-    .header-title { position: absolute; left: 50%; transform: translateX(-50%); text-align: center; }
-    .main-header .controls { margin-left: auto; }
-    h1 { font-size: 1.5rem; }
-    .updated { font-size: 0.75rem; color: #6B7280; }
-    .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-
-    @media (max-width: 600px) {
-      header { gap: 8px; margin-bottom: 16px; }
-      .main-header { min-height: 44px; }
-      .header-icon { position: absolute; left: 0; top: 50%; transform: translateY(-50%); }
-      .header-title { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
-      .hamburger-menu { top: 50%; transform: translateY(-50%); }
-      h1 { font-size: 1.25rem; }
-      button, select {
-        padding: 6px 10px;
-        font-size: 16px;
-      }
-    }
-    button, select {
-      background: #374151;
-      color: white;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-      -webkit-text-size-adjust: 100%;
-    }
-    button:hover, select:hover { background: #4B5563; }
-    button.active { background: #2563EB; }
-    select {
-      padding-right: 28px;
-      appearance: none;
-      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg width='8' height='5' viewBox='0 0 8 5' fill='none' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M1 1L4 4L7 1' stroke='%239CA3AF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3e%3c/svg%3e");
-      background-repeat: no-repeat;
-      background-position: right 10px center;
-    }
-
-    .cards { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 16px; }
-    @media (max-width: 900px) { .cards { grid-template-columns: repeat(3, 1fr); } }
-    @media (max-width: 600px) { .cards { grid-template-columns: repeat(2, 1fr); } }
-    .card {
-      background: #1F2937;
-      padding: 12px;
-      border-radius: 8px;
-    }
-    .card-label { font-size: 0.75rem; color: #9CA3AF; }
-    .card-value { font-size: 1.5rem; font-weight: bold; }
-
-    @media (max-width: 600px) {
-      .card { padding: 8px; }
-      .card-value { font-size: 1.25rem; }
-      .card-label { font-size: 0.7rem; }
-    }
-    .red { color: #F87171; }
-    .green { color: #4ADE80; }
-    .cyan { color: #22D3D3; }
-    .blue { color: #60A5FA; }
-
+    /* Page-specific styles for ads.html */
     .insights-container {
       margin-bottom: 16px;
     }
@@ -409,149 +337,12 @@
       height: 16px;
     }
 
-    /* Dashboard nav dropdown */
-    .nav-dropdown {
-      position: relative;
-      display: inline-block;
-    }
-
-    .nav-dropdown-menu {
-      display: none;
-      position: absolute;
-      top: 100%;
-      left: 0;
-      background: #1F2937;
-      border: 1px solid #374151;
-      border-radius: 8px;
-      margin-top: 8px;
-      min-width: 180px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      z-index: 100;
-      overflow: hidden;
-    }
-
-    .nav-dropdown-menu.open {
-      display: block;
-    }
-
-    .nav-dropdown-item {
-      display: block;
-      padding: 12px 16px;
-      color: white;
-      text-decoration: none;
-      font-size: 0.875rem;
-      border-bottom: 1px solid #374151;
-    }
-
-    .nav-dropdown-item:last-child {
-      border-bottom: none;
-    }
-
-    .nav-dropdown-item:hover {
-      background: #374151;
-    }
-
-    .nav-dropdown-item.active {
-      background: #2563EB;
-    }
-
-    /* Hamburger menu for mobile */
-    .hamburger-menu {
-      display: none;
-      position: absolute;
-      right: 0;
-      top: 50%;
-      transform: translateY(-50%);
-    }
-
-    @media (max-width: 600px) {
-      .hamburger-menu {
-        display: block;
-        position: absolute;
-        right: 0;
-        top: 8px;
-        transform: none;
-      }
-      .desktop-controls {
-        display: none;
-      }
-    }
-
-    .hamburger-btn {
-      background: transparent;
-      border: none;
-      padding: 8px;
-      cursor: pointer;
-      color: white;
-    }
-
-    .hamburger-dropdown {
-      display: none;
-      position: absolute;
-      top: 100%;
-      right: 0;
-      background: #1F2937;
-      border: 1px solid #374151;
-      border-radius: 8px;
-      margin-top: 4px;
-      min-width: 180px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      z-index: 100;
-    }
-
-    .hamburger-dropdown.open {
-      display: block;
-    }
-
-    .menu-section {
-      padding: 8px 0;
-      border-bottom: 1px solid #374151;
-    }
-
-    .menu-section:last-child {
-      border-bottom: none;
-    }
-
-    .menu-label {
-      padding: 4px 16px;
-      font-size: 0.7rem;
-      color: #6B7280;
-      text-transform: uppercase;
-    }
-
-    .menu-option {
-      padding: 8px 16px;
-      font-size: 0.8125rem;
-      cursor: pointer;
-      color: white;
-    }
-
-    .menu-option:hover {
-      background: #374151;
-    }
-
+    /* Ads-specific hamburger and menu overrides */
     .menu-option.selected {
       background: #2563EB;
     }
 
-    /* Password gate */
-    .password-gate {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: #111827;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-
-    .password-gate.hidden {
-      display: none;
-    }
-
+    /* Password box uses different class name in ads.html */
     .password-box {
       background: #1F2937;
       padding: 32px;
@@ -597,72 +388,13 @@
     .password-box button:hover {
       background: #1D4ED8;
     }
-
-    .password-error {
-      color: #F87171;
-      font-size: 0.8125rem;
-      margin-top: 12px;
-      display: none;
-    }
-
-    .dashboard-content {
-      display: none;
-    }
-
-    .dashboard-content.visible {
-      display: block;
-    }
-
-    /* Pull to refresh spinner */
-    #ptr-spinner {
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 28px;
-      height: 28px;
-      z-index: 1001;
-      pointer-events: none;
-      opacity: 0;
-      top: -40px;
-    }
-
-    #ptr-spinner.visible {
-      opacity: 1;
-    }
-
-    #ptr-spinner.refreshing svg {
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-
-    /* Dark scrollbar styles */
-    ::-webkit-scrollbar {
-      height: 8px;
-      width: 8px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #1A202C;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #4A5568;
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #718096;
-    }
   </style>
 </head>
 <body>
   <!-- Pull to refresh spinner -->
-  <div id="ptr-spinner">
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M23 4v6h-6"></path>
-      <path d="M1 20v-6h6"></path>
-      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+  <div id="ptr-spinner" class="ptr-spinner">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
     </svg>
   </div>
 
@@ -898,14 +630,11 @@
   </div>
 
   <script>
-    const SUPABASE_URL = 'https://tuueizexidbuvvgvxpms.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1dWVpemV4aWRidXZ2Z3Z4cG1zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MjM2NjksImV4cCI6MjA4MTM5OTY2OX0.lQ0MVBF98Jvc8qzP4M3W2osRvWQlUuCHeVTajuERi7A';
-
+    // Page-specific state
     let adsData = [];
     let superwallData = [];
     let chart = null;
     let chartData = [];
-    let granularity = 'hourly';
     let boostEnabled = localStorage.getItem('brainrot_boost_enabled') !== 'false'; // Default to true
 
     // All available columns with their display names and formatting
@@ -1027,7 +756,7 @@
 
           while (true) {
             const res = await fetch(
-              `${SUPABASE_URL}/rest/v1/meta_ads_hourly?select=*&order=hour_utc.asc&limit=${limit}&offset=${offset}`,
+              `${SUPABASE_URL}/rest/v1/meta_ads_hourly?select=*&app_id=eq.brainrot&order=hour_utc.asc&limit=${limit}&offset=${offset}`,
               { headers }
             );
             const data = await res.json();
@@ -1059,7 +788,7 @@
 
           while (true) {
             const res = await fetch(
-              `${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type&order=created_at.asc&limit=${limit}&offset=${offset}`,
+              `${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type&app_id=eq.brainrot&order=created_at.asc&limit=${limit}&offset=${offset}`,
               { headers }
             );
             const data = await res.json();
@@ -2202,32 +1931,7 @@
       }
     });
 
-    // Password gate
-    const CORRECT_PASSWORD_HASH = '107458b366671198f2e4845cc0a436f532c1e5db47d61c79d2ad11aa419cc980';
-
-    async function hashPassword(password) {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(password);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    async function checkPassword(event) {
-      event.preventDefault();
-      const password = document.getElementById('password-input').value;
-      const hash = await hashPassword(password);
-
-      if (hash === CORRECT_PASSWORD_HASH) {
-        localStorage.setItem('brainrot_auth', hash);
-        showDashboard();
-      } else {
-        document.getElementById('password-error').style.display = 'block';
-        document.getElementById('password-input').value = '';
-      }
-      return false;
-    }
-
+    // Override showDashboard to also initialize boost toggle
     function showDashboard() {
       document.getElementById('password-gate').classList.add('hidden');
       document.getElementById('dashboard-content').classList.add('visible');
@@ -2235,117 +1939,8 @@
       fetchData();
     }
 
-    // Check if already authenticated
-    async function checkAuth() {
-      const storedHash = localStorage.getItem('brainrot_auth');
-      if (storedHash === CORRECT_PASSWORD_HASH) {
-        showDashboard();
-      }
-    }
-
-    checkAuth();
-
-    // Pull to refresh (mobile only)
-    let pullStartY = 0;
-    let currentPullDistance = 0;
-    let isPulling = false;
-    let isRefreshing = false;
-    let hasTriggeredHaptic = false;
-    const pullThreshold = 60;
-    const maxPull = 120;
-
-    const spinner = document.getElementById('ptr-spinner');
-    const dashboard = document.getElementById('dashboard-content');
-
-    function haptic(style = 'light') {
-      if ('vibrate' in navigator) {
-        if (style === 'light') navigator.vibrate(10);
-        else if (style === 'medium') navigator.vibrate(20);
-        else if (style === 'success') navigator.vibrate([10, 50, 20]);
-      }
-    }
-
-    document.addEventListener('touchstart', (e) => {
-      if (isRefreshing) return;
-      if (window.scrollY <= 0) {
-        pullStartY = e.touches[0].clientY;
-        isPulling = true;
-        hasTriggeredHaptic = false;
-        currentPullDistance = 0;
-        dashboard.style.transition = 'none';
-        spinner.style.transition = 'none';
-      }
-    }, { passive: true });
-
-    document.addEventListener('touchmove', (e) => {
-      if (!isPulling || isRefreshing) return;
-
-      const currentY = e.touches[0].clientY;
-      const rawPull = currentY - pullStartY;
-
-      if (rawPull > 0 && window.scrollY <= 0) {
-        const resistance = Math.max(0.4 - (rawPull / 1000), 0.2);
-        currentPullDistance = Math.min(rawPull * resistance, maxPull);
-
-        dashboard.style.transform = `translateY(${currentPullDistance}px)`;
-        spinner.style.top = `${currentPullDistance - 30}px`;
-        spinner.style.opacity = Math.min(currentPullDistance / pullThreshold, 1);
-        spinner.classList.add('visible');
-
-        const rotation = (currentPullDistance / pullThreshold) * 360;
-        spinner.querySelector('svg').style.transform = `rotate(${rotation}deg)`;
-
-        if (currentPullDistance >= pullThreshold && !hasTriggeredHaptic) {
-          haptic('medium');
-          hasTriggeredHaptic = true;
-        }
-      }
-    }, { passive: true });
-
-    document.addEventListener('touchend', () => {
-      if (!isPulling) return;
-
-      if (currentPullDistance >= pullThreshold && !isRefreshing) {
-        isRefreshing = true;
-        haptic('success');
-
-        dashboard.style.transition = 'transform 0.2s ease-out';
-        dashboard.style.transform = 'translateY(50px)';
-        spinner.style.transition = 'top 0.2s ease-out';
-        spinner.style.top = '20px';
-        spinner.classList.add('refreshing');
-
-        fetchData(true).then(() => {
-          setTimeout(() => {
-            dashboard.style.transition = 'transform 0.3s ease-out';
-            dashboard.style.transform = 'translateY(0)';
-            spinner.style.transition = 'opacity 0.2s ease-out, top 0.3s ease-out';
-            spinner.style.opacity = '0';
-            spinner.style.top = '-40px';
-
-            setTimeout(() => {
-              spinner.classList.remove('visible', 'refreshing');
-              isRefreshing = false;
-            }, 300);
-          }, 500);
-        });
-      } else {
-        dashboard.style.transition = 'transform 0.3s ease-out';
-        dashboard.style.transform = 'translateY(0)';
-        spinner.style.transition = 'opacity 0.2s ease-out, top 0.3s ease-out';
-        spinner.style.opacity = '0';
-        spinner.style.top = '-40px';
-
-        setTimeout(() => {
-          spinner.classList.remove('visible');
-        }, 300);
-      }
-
-      isPulling = false;
-      currentPullDistance = 0;
-    }, { passive: true });
-
     // Init
+    checkAuth();
     updateHamburgerMenuSelection();
   </script>
 </body>

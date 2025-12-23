@@ -26,292 +26,22 @@
   <meta name="apple-mobile-web-app-title" content="Brainrot">
   <link rel="manifest" href="manifest.json">
 
+  <!-- Shared styles -->
+  <link rel="stylesheet" href="shared.css">
+
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+  <script src="shared.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #111827;
-      color: white;
-      padding: 16px;
-      min-height: 100vh;
-    }
-    .container { max-width: 1000px; margin: 0 auto; width: 100%; }
-
-    /* Mobile-specific adjustments */
-    @media (max-width: 600px) {
-      body { padding: 8px; }
-      .container { padding: 0; }
-    }
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
-    .main-header { position: relative; z-index: 1000; }
-    .header-icon { position: absolute; left: 0; top: 50%; transform: translateY(-50%); }
-    .header-title { position: absolute; left: 50%; transform: translateX(-50%); text-align: center; }
-    .main-header .controls { margin-left: auto; }
-    h1 { font-size: 1.5rem; }
-    .updated { font-size: 0.75rem; color: #6B7280; }
-    .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-
-    @media (max-width: 600px) {
-      header { gap: 8px; margin-bottom: 12px; }
-      .main-header { min-height: 44px; }
-      .header-icon { position: absolute; left: 0; top: 50%; transform: translateY(-50%); }
-      .header-title { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
-      .hamburger-menu { top: 50%; transform: translateY(-50%); }
-      h1 { font-size: 1.25rem; }
-      button, select {
-        padding: 6px 10px;
-        font-size: 16px; /* 16px prevents iOS zoom on form controls */
-      }
-    }
-    button, select {
-      background: #374151;
-      color: white;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-      -webkit-text-size-adjust: 100%; /* Prevent text size adjustment */
-    }
-    button:hover, select:hover { background: #4B5563; }
-    button.active { background: #2563EB; }
-    select {
-      padding-right: 28px;
-      appearance: none;
-      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg width='8' height='5' viewBox='0 0 8 5' fill='none' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M1 1L4 4L7 1' stroke='%239CA3AF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3e%3c/svg%3e");
-      background-repeat: no-repeat;
-      background-position: right 10px center;
-    }
-    .cards { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 16px; }
-    @media (max-width: 900px) { .cards { grid-template-columns: repeat(3, 1fr); } }
-    @media (max-width: 600px) { .cards { grid-template-columns: repeat(2, 1fr); } }
-    .card {
-      background: #1F2937;
-      padding: 12px;
-      border-radius: 8px;
-    }
-    .card-label { font-size: 0.75rem; color: #9CA3AF; }
-    .card-value { font-size: 1.5rem; font-weight: bold; }
-
-    @media (max-width: 600px) {
-      .card { padding: 8px; }
-      .card-value { font-size: 1.25rem; }
-      .card-label { font-size: 0.7rem; }
-    }
-    .red { color: #F87171; }
-    .green { color: #4ADE80; }
-    .cyan { color: #22D3D3; }
-    .blue { color: #60A5FA; }
-    .chart-container {
-      background: #1F2937;
-      padding: 40px 16px 16px 16px;
-      border-radius: 8px;
-      margin-bottom: 16px;
-    }
-
-    @media (max-width: 600px) {
-      .chart-container {
-        padding: 20px 8px 8px 8px;
-        border-radius: 4px;
-      }
-      .chart-wrapper { height: 250px; }
-    }
-    .chart-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .chart-title { font-size: 0.875rem; color: #9CA3AF; }
-    .toggles { display: flex; gap: 12px; flex-wrap: wrap; }
-    .toggle {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      cursor: pointer;
-      font-size: 0.875rem;
-    }
-    .toggle input { display: none; }
-    .toggle-box {
-      width: 14px;
-      height: 14px;
-      border-radius: 3px;
-      border: 2px solid;
-    }
-    .toggle input:checked + .toggle-box { background: currentColor; }
-    .toggle-new { color: #4ADE80; }
-    .toggle-renewal { color: #22D3D3; }
-    .toggle-spend { color: #F87171; }
-    .chart-wrapper { position: relative; height: 350px; }
-    table { font-size: 0.8rem; border-collapse: collapse; white-space: nowrap; }
-    th { text-align: left; color: #6B7280; padding: 6px 10px; min-width: 100px; font-weight: 500; background: transparent; }
-    th:first-child { min-width: 160px; }
-    th:last-child { font-weight: 600; }
-    td { padding: 6px 10px; text-align: left; min-width: 100px; background: transparent; }
-    td:first-child { font-weight: 500; min-width: 160px; }
-
-    /* Mobile table adjustments */
-    @media (max-width: 600px) {
-      th { min-width: 60px; padding: 4px 6px; font-size: 0.75rem; }
-      th:first-child { min-width: 100px; }
-      td { min-width: 60px; padding: 4px 6px; font-size: 0.75rem; }
-      td:first-child { min-width: 100px; }
-    }
-    td:last-child { font-weight: 600; }
-    tr { border-bottom: 1px solid #2D3748; }
-    tr:last-child { border-bottom: none; }
-    .mono { font-family: 'SF Mono', monospace; }
+    /* Page-specific styles for index.html */
     #data-table { min-width: 100%; }
 
-    /* Sticky column styles */
-    .sticky-col {
-      position: sticky;
-      left: -20px;
-      background: #1A202C !important;
-      z-index: 2;
-      padding-left: 40px;
-      padding-right: 20px;
-      box-shadow: 2px 0 4px rgba(0,0,0,0.3);
-      min-width: 160px;
-    }
-
-    th.sticky-col,
-    td.sticky-col {
-      background: #1A202C !important;
-    }
-
     @media (max-width: 600px) {
-      .sticky-col {
-        min-width: 120px;
-        padding-left: 28px;
-        padding-right: 8px;
-        left: -20px;
-      }
       #transactions-table {
         zoom: 0.7;
       }
-    }
-
-    /* Hamburger menu styles */
-    .hamburger-menu {
-      display: none;
-      position: absolute;
-      right: 0;
-      top: 50%;
-      transform: translateY(-50%);
-    }
-    .hamburger-btn {
-      background: transparent;
-      border: none;
-      color: white;
-      padding: 8px;
-      cursor: pointer;
-    }
-    .hamburger-dropdown {
-      display: none;
-      position: absolute;
-      top: 100%;
-      right: 0;
-      background: #1F2937;
-      border: 1px solid #374151;
-      border-radius: 8px;
-      min-width: 180px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      z-index: 1000;
-      overflow: hidden;
-    }
-    .hamburger-dropdown.open {
-      display: block;
-    }
-    .menu-section {
-      border-bottom: 1px solid #374151;
-      padding: 8px 0;
-    }
-    .menu-section:last-child {
-      border-bottom: none;
-    }
-    .menu-label {
-      color: #6B7280;
-      font-size: 0.7rem;
-      padding: 4px 16px;
-      text-transform: uppercase;
-    }
-    .menu-option {
-      color: white;
-      font-size: 0.85rem;
-      padding: 10px 16px;
-      cursor: pointer;
-    }
-    .menu-option:hover {
-      background: #374151;
-    }
-    .menu-option.active {
-      background: #2563EB;
-    }
-    @media (max-width: 600px) {
-      .hamburger-menu {
-        display: block;
-      }
-      .desktop-controls {
-        display: none !important;
-      }
-    }
-
-    /* Dropdown hover styles */
-    .granularity-dropdown div[onclick]:hover {
-      background: #374151 !important;
-    }
-
-    /* Dashboard nav dropdown */
-    .nav-dropdown {
-      position: relative;
-      display: inline-block;
-    }
-
-    .nav-dropdown-menu {
-      display: none;
-      position: absolute;
-      top: 100%;
-      left: 0;
-      background: #1F2937;
-      border: 1px solid #374151;
-      border-radius: 8px;
-      margin-top: 8px;
-      min-width: 180px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      z-index: 100;
-      overflow: hidden;
-    }
-
-    .nav-dropdown-menu.open {
-      display: block;
-    }
-
-    .nav-dropdown-item {
-      display: block;
-      padding: 12px 16px;
-      color: white;
-      text-decoration: none;
-      font-size: 0.875rem;
-      border-bottom: 1px solid #374151;
-    }
-
-    .nav-dropdown-item:last-child {
-      border-bottom: none;
-    }
-
-    .nav-dropdown-item:hover {
-      background: #374151;
-    }
-
-    .nav-dropdown-item.active {
-      background: #2563EB;
     }
 
     /* Checkbox toggle styles */
@@ -327,197 +57,6 @@
     }
     input#toggle-spend:not(:checked) + label {
       border-color: #EF4444;
-    }
-
-    /* Dark scrollbar styles */
-    ::-webkit-scrollbar {
-      height: 8px;
-      width: 8px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #1A202C;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #4A5568;
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #718096;
-    }
-
-    /* Password gate styles */
-    .password-gate {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: #111827;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-    .password-gate.hidden {
-      display: none;
-    }
-    .password-form {
-      background: #1F2937;
-      padding: 32px;
-      border-radius: 12px;
-      text-align: center;
-      max-width: 320px;
-      width: 90%;
-    }
-    .password-form img {
-      width: 64px;
-      height: 64px;
-      border-radius: 16px;
-      margin-bottom: 16px;
-    }
-    .password-form h2 {
-      color: white;
-      font-size: 1.25rem;
-      margin-bottom: 8px;
-    }
-    .password-form p {
-      color: #6B7280;
-      font-size: 0.875rem;
-      margin-bottom: 24px;
-    }
-    .password-form input[type="password"] {
-      width: 100%;
-      padding: 12px 16px;
-      background: #374151;
-      border: 1px solid #4B5563;
-      border-radius: 8px;
-      color: white;
-      font-size: 16px;
-      margin-bottom: 16px;
-      box-sizing: border-box;
-    }
-    .password-form input[type="password"]:focus {
-      outline: none;
-      border-color: #60A5FA;
-    }
-    .password-form button {
-      width: 100%;
-      padding: 12px 16px;
-      background: #2563EB;
-      border: none;
-      border-radius: 8px;
-      color: white;
-      font-size: 1rem;
-      cursor: pointer;
-    }
-    .password-form button:hover {
-      background: #1D4ED8;
-    }
-    .password-error {
-      color: #F87171;
-      font-size: 0.875rem;
-      margin-top: 12px;
-      display: none;
-    }
-    .dashboard-content {
-      display: none;
-    }
-    .dashboard-content.visible {
-      display: block;
-    }
-
-    /* Skeleton loading styles */
-    @keyframes shimmer {
-      0% { background-position: -200% 0; }
-      100% { background-position: 200% 0; }
-    }
-    .skeleton {
-      background: linear-gradient(90deg, #374151 25%, #4B5563 50%, #374151 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.5s infinite;
-      border-radius: 4px;
-    }
-    .skeleton-card-value {
-      height: 36px;
-      width: 80%;
-      margin-bottom: 8px;
-    }
-    .skeleton-card-label {
-      height: 12px;
-      width: 60%;
-    }
-    .skeleton-chart {
-      height: 100%;
-      width: 100%;
-      border-radius: 8px;
-      position: absolute;
-      top: 0;
-      left: 0;
-    }
-    .skeleton-table-row {
-      height: 24px;
-      width: 100%;
-      margin-bottom: 8px;
-    }
-    .skeleton-transaction-row {
-      display: flex;
-      gap: 12px;
-      padding: 8px 0;
-      border-bottom: 1px solid #2D3748;
-    }
-    .skeleton-transaction-row .skeleton {
-      height: 20px;
-    }
-    .loading-content .card-value,
-    .loading-content .card-label {
-      opacity: 0;
-    }
-    .loading-content #chart {
-      opacity: 0;
-    }
-    .loading-content #data-table {
-      opacity: 0;
-    }
-    .loading-content #transactions-table {
-      opacity: 0;
-    }
-    .loading-content .skeleton-overlay {
-      display: block;
-    }
-    .skeleton-overlay {
-      display: none;
-    }
-
-    /* Pull to refresh styles */
-    .ptr-wrapper {
-      position: relative;
-      overflow: visible;
-    }
-    .ptr-spinner {
-      position: absolute;
-      top: -50px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 24px;
-      height: 24px;
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-    .ptr-spinner.visible {
-      opacity: 1;
-    }
-    .ptr-spinner svg {
-      width: 24px;
-      height: 24px;
-      color: #6B7280;
-    }
-    .ptr-spinner.refreshing svg {
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
     }
   </style>
 </head>
@@ -773,10 +312,7 @@
   </div>
 
   <script>
-    const SUPABASE_URL = 'https://tuueizexidbuvvgvxpms.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1dWVpemV4aWRidXZ2Z3Z4cG1zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MjM2NjksImV4cCI6MjA4MTM5OTY2OX0.lQ0MVBF98Jvc8qzP4M3W2osRvWQlUuCHeVTajuERi7A';
-
-    let granularity = 'hourly';
+    // Page-specific state
     let chart = null;
     let adsData = [];
     let revenueData = [];  // Lightweight data for charts (no raw_payload)
@@ -832,7 +368,7 @@
 
           while (true) {
             const res = await fetch(
-              `${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type,product_id&created_at=gte.${cutoffDate}&order=created_at.asc&limit=${limit}&offset=${offset}`,
+              `${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type,product_id&app_id=eq.brainrot&created_at=gte.${cutoffDate}&order=created_at.asc&limit=${limit}&offset=${offset}`,
               { headers }
             );
             const data = await res.json();
@@ -847,7 +383,7 @@
         // Fetch recent transactions with full data (including raw_payload) - just 50 most recent
         const fetchRecentTransactions = async () => {
           const res = await fetch(
-            `${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type,user_id,product_id,is_refund,raw_payload&order=created_at.desc&limit=50`,
+            `${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type,user_id,product_id,is_refund,raw_payload&app_id=eq.brainrot&order=created_at.desc&limit=50`,
             { headers }
           );
           return await res.json();
@@ -855,7 +391,7 @@
 
         // Fetch all data in parallel
         const [adsRes, chartRevenueData, recentTransactions] = await Promise.all([
-          fetch(`${SUPABASE_URL}/rest/v1/meta_ads_hourly?select=hour_utc,spend&order=hour_utc.asc`, { headers }),
+          fetch(`${SUPABASE_URL}/rest/v1/meta_ads_hourly?select=hour_utc,spend&app_id=eq.brainrot&order=hour_utc.asc`, { headers }),
           fetchChartRevenue(),
           fetchRecentTransactions()
         ]);
@@ -893,179 +429,14 @@
       }
     }
 
-    function updateSubtitle() {
-      const range = document.getElementById('time-range').value;
-      const labels = {
-        '24h': 'Last 24 Hours',
-        'today': 'Today',
-        'yesterday': 'Yesterday',
-        '7d': 'Last 7 Days',
-        '14d': 'Last 14 Days',
-        '30d': 'Last 30 Days',
-        '90d': 'Last 90 Days',
-        '180d': 'Last 180 Days'
-      };
-      document.getElementById('updated').textContent = labels[range] || range;
-    }
-
-    function toggleGranularityDropdown() {
-      const menu = document.getElementById('granularity-menu');
-      menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-    }
-
-    function selectGranularity(g) {
-      granularity = g;
-      document.getElementById('granularity-label').textContent = g === 'hourly' ? 'Hourly' : 'Daily';
-      document.getElementById('granularity-menu').style.display = 'none';
-      render();
-    }
-
-    function toggleNavDropdown() {
-      const menu = document.getElementById('nav-dropdown-menu');
-      menu.classList.toggle('open');
-    }
-
-    function toggleHamburgerMenu() {
-      const dropdown = document.getElementById('hamburger-dropdown');
-      dropdown.classList.toggle('open');
-    }
-
-    function selectTimeRange(value) {
-      document.getElementById('time-range').value = value;
-      updateHamburgerMenuSelection();
-      handleTimeRangeChange();
-      toggleHamburgerMenu();
-    }
-
-    function selectTimezone(value) {
-      document.getElementById('timezone').value = value;
-      updateHamburgerMenuSelection();
-      render();
-      toggleHamburgerMenu();
-    }
-
-    function updateHamburgerMenuSelection() {
-      const timeRange = document.getElementById('time-range').value;
-      const timezone = document.getElementById('timezone').value;
-
-      // Update time range options
-      document.querySelectorAll('.menu-section:first-child .menu-option').forEach(opt => {
-        const optValue = opt.getAttribute('onclick').match(/'([^']+)'/)[1];
-        opt.classList.toggle('active', optValue === timeRange);
-      });
-
-      // Update timezone options
-      document.querySelectorAll('.menu-section:nth-child(2) .menu-option').forEach(opt => {
-        const optValue = opt.getAttribute('onclick').match(/'([^']+)'/)[1];
-        opt.classList.toggle('active', optValue === timezone);
-      });
-    }
-
-    // Close hamburger menu when clicking outside
-    document.addEventListener('click', function(e) {
-      const menu = document.querySelector('.hamburger-menu');
-      const dropdown = document.getElementById('hamburger-dropdown');
-      if (menu && !menu.contains(e.target) && dropdown.classList.contains('open')) {
-        dropdown.classList.remove('open');
-      }
-
-      // Close nav dropdown when clicking outside
-      const navDropdown = document.querySelector('.nav-dropdown');
-      const navMenu = document.getElementById('nav-dropdown-menu');
-      if (navDropdown && !navDropdown.contains(e.target) && navMenu.classList.contains('open')) {
-        navMenu.classList.remove('open');
-      }
-    });
-
-    function handleTimeRangeChange() {
-      const range = document.getElementById('time-range').value;
-
-      // Auto-switch granularity based on time range
-      // For 7 days or more, default to daily
-      // For 24h, today, yesterday, default to hourly
-      if (range === '7d' || range === '14d' || range === '30d' || range === '90d' || range === '180d') {
-        if (granularity === 'hourly') {
-          selectGranularity('daily');
-        }
-      } else if (range === '24h' || range === 'today' || range === 'yesterday') {
-        if (granularity === 'daily') {
-          selectGranularity('hourly');
-        }
-      }
-
-      updateSubtitle();
-      render();
-    }
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function(event) {
-      const dropdown = document.querySelector('.granularity-dropdown');
-      if (dropdown && !dropdown.contains(event.target)) {
-        document.getElementById('granularity-menu').style.display = 'none';
-      }
-    });
-
-    function getTimeRange() {
-      const range = document.getElementById('time-range').value;
-      const now = new Date();
-
-      // Get midnight PST for today
-      // Get today's date in PST as YYYY-MM-DD, then parse as midnight PST
-      const pstDateStr = now.toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' }); // YYYY-MM-DD
-      const todayMidnightPST = new Date(pstDateStr + 'T00:00:00-08:00');
-
-      switch (range) {
-        case '24h':
-          // Start at the beginning of the hour 23 hours ago to get 24 total periods (current hour + 23 previous)
-          const start24h = new Date(now - 23 * 60 * 60 * 1000);
-          start24h.setMinutes(0, 0, 0);
-          return { start: start24h, end: now };
-        case 'today':
-          return { start: todayMidnightPST, end: now };
-        case 'yesterday':
-          const yesterdayPST = new Date(todayMidnightPST - 24 * 60 * 60 * 1000);
-          return { start: yesterdayPST, end: todayMidnightPST };
-        case '7d':
-          // Today + 6 previous whole days = 7 days total (in PST)
-          return { start: new Date(todayMidnightPST - 6 * 24 * 60 * 60 * 1000), end: now };
-        case '14d':
-          return { start: new Date(todayMidnightPST - 13 * 24 * 60 * 60 * 1000), end: now };
-        case '30d':
-          return { start: new Date(todayMidnightPST - 29 * 24 * 60 * 60 * 1000), end: now };
-        case '90d':
-          return { start: new Date(todayMidnightPST - 89 * 24 * 60 * 60 * 1000), end: now };
-        case '180d':
-          return { start: new Date(todayMidnightPST - 179 * 24 * 60 * 60 * 1000), end: now };
-        default:
-          return { start: new Date(todayMidnightPST - 6 * 24 * 60 * 60 * 1000), end: now };
-      }
-    }
-
     function render() {
       const { start, end } = getTimeRange();
-      
-      const bucketKey = (ts) => {
-        if (!ts) return null;
-        const date = new Date(ts);
-        if (date < start || date > end) return null;
-
-        // The data is stored in UTC but needs to be shifted back 8 hours
-        // to correct for the timezone issue
-        const correctedDate = new Date(date.getTime() - 8 * 60 * 60 * 1000);
-        const correctedTs = correctedDate.toISOString();
-
-        if (granularity === 'daily') {
-          return correctedTs.slice(0, 10);
-        } else {
-          return correctedTs.slice(0, 13);
-        }
-      };
 
       const map = new Map();
 
       // Aggregate ad spend
       (adsData || []).forEach(row => {
-        const key = bucketKey(row.hour_utc);
+        const key = createBucketKey(row.hour_utc, start, end);
         if (key) {
           const existing = map.get(key) || { bucket: key, spend: 0, newPurchases: 0, renewals: 0 };
           existing.spend += parseFloat(row.spend) || 0;
@@ -1075,7 +446,7 @@
 
       // Aggregate revenue by type
       (revenueData || []).forEach(row => {
-        const key = bucketKey(row.created_at);
+        const key = createBucketKey(row.created_at, start, end);
         if (key) {
           const existing = map.get(key) || { bucket: key, spend: 0, newPurchases: 0, renewals: 0 };
           const proceeds = parseFloat(row.proceeds) || 0;
@@ -1106,7 +477,7 @@
 
       // Count conversions from Superwall revenue data
       const filteredRevenue = (revenueData || []).filter(row => {
-        const key = bucketKey(row.created_at);
+        const key = createBucketKey(row.created_at, start, end);
         return key;
       });
 
@@ -1132,39 +503,6 @@
       hideSkeletons();
     }
 
-    function formatLabel(bucket) {
-      const displayTimezone = document.getElementById('timezone').value;
-
-      // Bucket keys are in PST (America/Los_Angeles) after the -8 hour correction
-      // We need to interpret them as PST, then display in the user's selected timezone
-
-      if (granularity === 'daily') {
-        // Daily bucket like "2025-12-21" is a PST date
-        // For daily, the date itself doesn't shift between PST/EST, just display it
-        const [year, month, day] = bucket.split('-').map(Number);
-        const date = new Date(year, month - 1, day, 12, 0, 0); // noon local time
-        const dateStr = date.toLocaleDateString('en-US', {
-          weekday: 'short',
-          month: 'short',
-          day: 'numeric'
-        });
-        return dateStr;
-      } else {
-        // Hourly bucket like "2025-12-21T20" is 8pm PST
-        // Parse as PST, then format in user's display timezone
-        const pstDate = new Date(bucket + ':00:00-08:00'); // Parse with PST offset
-        const dateStr = pstDate.toLocaleDateString('en-US', {
-          timeZone: displayTimezone,
-          weekday: 'short'
-        });
-        const timeStr = pstDate.toLocaleTimeString('en-US', {
-          timeZone: displayTimezone,
-          hour: 'numeric'
-        });
-        return `${dateStr}, ${timeStr.toLowerCase()}`;
-      }
-    }
-
     function updateChart() {
       const showNew = document.getElementById('toggle-new').checked;
       const showRenewal = document.getElementById('toggle-renewal').checked;
@@ -1181,7 +519,7 @@
         td.style.color = showSpend ? 'white' : '#6B7280';
       });
 
-      const labels = processedData.map(d => formatLabel(d.bucket));
+      const labels = processedData.map(d => formatBucketLabel(d.bucket));
       const datasets = [];
 
       // Create datasets with specific indices for sorting
@@ -1292,7 +630,7 @@
 
                   if (data) {
                     const items = tooltipModel.dataPoints;
-                    const label = formatLabel(data.bucket);
+                    const label = formatBucketLabel(data.bucket);
 
                     // Calculate hours/days ago
                     // Bucket is in PST, so parse with -08:00 offset
@@ -1859,167 +1197,8 @@
       updateTransactions();
     }
 
-    // Password gate
-    const CORRECT_PASSWORD_HASH = '107458b366671198f2e4845cc0a436f532c1e5db47d61c79d2ad11aa419cc980';
-
-    async function hashPassword(password) {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(password);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    async function checkPassword(event) {
-      event.preventDefault();
-      const password = document.getElementById('password-input').value;
-      const hash = await hashPassword(password);
-
-      if (hash === CORRECT_PASSWORD_HASH) {
-        localStorage.setItem('brainrot_auth', hash);
-        showDashboard();
-      } else {
-        document.getElementById('password-error').style.display = 'block';
-        document.getElementById('password-input').value = '';
-      }
-      return false;
-    }
-
-    function showDashboard() {
-      document.getElementById('password-gate').classList.add('hidden');
-      const dashboard = document.getElementById('dashboard-content');
-      dashboard.classList.add('visible');
-      dashboard.classList.add('loading-content');
-      fetchData();
-    }
-
-    function hideSkeletons() {
-      const dashboard = document.getElementById('dashboard-content');
-      dashboard.classList.remove('loading-content');
-    }
-
-    // Check if already authenticated
-    async function checkAuth() {
-      const storedHash = localStorage.getItem('brainrot_auth');
-      if (storedHash === CORRECT_PASSWORD_HASH) {
-        showDashboard();
-      }
-    }
-
+    // Initialize on load
     checkAuth();
-
-    // Pull to refresh (mobile only) - native feel
-    let pullStartY = 0;
-    let currentPullDistance = 0;
-    let isPulling = false;
-    let isRefreshing = false;
-    let hasTriggeredHaptic = false;
-    const pullThreshold = 60;
-    const maxPull = 120;
-
-    const spinner = document.getElementById('ptr-spinner');
-    const dashboard = document.getElementById('dashboard-content');
-
-    // Haptic feedback helper
-    function haptic(style = 'light') {
-      if ('vibrate' in navigator) {
-        if (style === 'light') navigator.vibrate(10);
-        else if (style === 'medium') navigator.vibrate(20);
-        else if (style === 'success') navigator.vibrate([10, 50, 20]);
-      }
-    }
-
-    document.addEventListener('touchstart', (e) => {
-      if (isRefreshing) return;
-
-      // Check if we're at the top
-      if (window.scrollY <= 0) {
-        pullStartY = e.touches[0].clientY;
-        isPulling = true;
-        hasTriggeredHaptic = false;
-        currentPullDistance = 0;
-        dashboard.style.transition = 'none';
-        spinner.style.transition = 'none';
-      }
-    }, { passive: true });
-
-    document.addEventListener('touchmove', (e) => {
-      if (!isPulling || isRefreshing) return;
-
-      const currentY = e.touches[0].clientY;
-      const rawPull = currentY - pullStartY;
-
-      // Only activate when pulling down and at top of page
-      if (rawPull > 0 && window.scrollY <= 0) {
-        // Apply resistance curve - gets harder to pull as you go
-        const resistance = Math.max(0.4 - (rawPull / 1000), 0.2);
-        currentPullDistance = Math.min(rawPull * resistance, maxPull);
-
-        // Move the entire dashboard content down
-        dashboard.style.transform = `translateY(${currentPullDistance}px)`;
-
-        // Position and show spinner
-        spinner.style.top = `${currentPullDistance - 30}px`;
-        spinner.style.opacity = Math.min(currentPullDistance / pullThreshold, 1);
-        spinner.classList.add('visible');
-
-        // Rotate spinner based on pull progress
-        const rotation = (currentPullDistance / pullThreshold) * 360;
-        spinner.querySelector('svg').style.transform = `rotate(${rotation}deg)`;
-
-        // Haptic when crossing threshold
-        if (currentPullDistance >= pullThreshold && !hasTriggeredHaptic) {
-          hasTriggeredHaptic = true;
-          haptic('medium');
-        } else if (currentPullDistance < pullThreshold && hasTriggeredHaptic) {
-          hasTriggeredHaptic = false;
-        }
-      }
-    }, { passive: true });
-
-    document.addEventListener('touchend', async () => {
-      if (!isPulling || isRefreshing) return;
-      isPulling = false;
-
-      dashboard.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-      spinner.style.transition = 'top 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease';
-
-      if (currentPullDistance >= pullThreshold) {
-        // Trigger refresh
-        isRefreshing = true;
-        haptic('success');
-
-        // Hold at refresh position
-        dashboard.style.transform = 'translateY(50px)';
-        spinner.style.top = '20px';
-        spinner.style.opacity = '1';
-        spinner.classList.add('refreshing');
-
-        await fetchData(true);
-
-        // Small delay so user sees the refresh happened
-        await new Promise(resolve => setTimeout(resolve, 300));
-
-        // Animate back
-        spinner.classList.remove('refreshing');
-        dashboard.style.transform = 'translateY(0)';
-        spinner.style.opacity = '0';
-
-        setTimeout(() => {
-          spinner.classList.remove('visible');
-          isRefreshing = false;
-        }, 300);
-      } else {
-        // Snap back
-        dashboard.style.transform = 'translateY(0)';
-        spinner.style.opacity = '0';
-        setTimeout(() => {
-          spinner.classList.remove('visible');
-        }, 300);
-      }
-
-      currentPullDistance = 0;
-    }, { passive: true });
   </script>
 </body>
 </html>
