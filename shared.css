@@ -224,10 +224,12 @@ td.sticky-col {
   text-transform: uppercase;
 }
 .menu-option {
+  display: block;
   color: white;
   font-size: 0.85rem;
   padding: 10px 16px;
   cursor: pointer;
+  text-decoration: none;
 }
 .menu-option:hover {
   background: #374151;
@@ -275,12 +277,22 @@ td.sticky-col {
 }
 
 .nav-dropdown-item {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 12px 16px;
   color: white;
   text-decoration: none;
   font-size: 0.875rem;
   border-bottom: 1px solid #374151;
+}
+
+.nav-item-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 .nav-dropdown-item:last-child {
@@ -293,6 +305,47 @@ td.sticky-col {
 
 .nav-dropdown-item.active {
   background: #2563EB;
+}
+
+/* View tabs (Overview / Ads) */
+.view-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  background: #1F2937;
+  padding: 4px;
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.view-tab {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #9CA3AF;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.view-tab:hover {
+  color: white;
+  background: #374151;
+}
+
+.view-tab.active {
+  background: #2563EB;
+  color: white;
+}
+
+@media (max-width: 600px) {
+  .view-tabs {
+    margin-bottom: 12px;
+  }
+  .view-tab {
+    padding: 6px 12px;
+    font-size: 0.8125rem;
+  }
 }
 
 /* Dark scrollbar styles */
@@ -405,13 +458,19 @@ td.sticky-col {
   border-radius: 4px;
 }
 .skeleton-card-value {
-  height: 36px;
+  height: 24px;
   width: 80%;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 .skeleton-card-label {
   height: 12px;
   width: 60%;
+}
+
+@media (max-width: 600px) {
+  .skeleton-card-value {
+    height: 20px;
+  }
 }
 .skeleton-chart {
   height: 100%;

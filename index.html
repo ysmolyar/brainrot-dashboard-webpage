@@ -3,27 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Brainrot Dashboard</title>
+  <title>Smolworks Dashboard</title>
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="brainrot-icon.png">
-  <link rel="apple-touch-icon" href="brainrot-icon.png">
+  <link rel="icon" type="image/png" href="smolworks-icon.png">
+  <link rel="apple-touch-icon" href="smolworks-icon.png">
 
   <!-- Meta tags for better SEO and sharing -->
-  <meta name="description" content="Real-time analytics dashboard for Brainrot app - track revenue, conversions, and ad spend">
-  <meta name="author" content="Brainrot">
+  <meta name="description" content="Real-time analytics dashboard - track revenue, conversions, and ad spend">
+  <meta name="author" content="Smolworks">
   <meta name="theme-color" content="#111827">
 
   <!-- Open Graph tags for social sharing -->
-  <meta property="og:title" content="Brainrot Dashboard">
-  <meta property="og:description" content="Real-time analytics dashboard for Brainrot app">
-  <meta property="og:image" content="brainrot-icon.png">
+  <meta property="og:title" content="Smolworks Dashboard">
+  <meta property="og:description" content="Real-time analytics dashboard">
+  <meta property="og:image" content="smolworks-icon.png">
   <meta property="og:type" content="website">
 
   <!-- Apple specific -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Brainrot">
+  <meta name="apple-mobile-web-app-title" content="Smolworks">
   <link rel="manifest" href="manifest.json">
 
   <!-- Shared styles -->
@@ -71,8 +71,8 @@
   <!-- Password Gate -->
   <div id="password-gate" class="password-gate">
     <div class="password-form">
-      <img src="brainrot-icon.png" alt="Brainrot">
-      <h2>Brainrot Dashboard</h2>
+      <img src="smolworks-icon.png" alt="Smolworks">
+      <h2>Smolworks Dashboard</h2>
       <p>Enter password to continue</p>
       <form onsubmit="return checkPassword(event)">
         <input type="password" id="password-input" placeholder="Password" autocomplete="current-password">
@@ -85,14 +85,24 @@
   <div class="container dashboard-content" id="dashboard-content">
     <header class="main-header">
       <div class="nav-dropdown">
-        <img src="brainrot-icon.png" alt="Brainrot" class="header-icon" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; cursor: pointer;" onclick="toggleNavDropdown()">
+        <img src="smolworks-icon.png" alt="Smolworks" class="header-icon" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; cursor: pointer;" onclick="toggleNavDropdown()">
         <div class="nav-dropdown-menu" id="nav-dropdown-menu">
-          <a href="index.html" class="nav-dropdown-item active">Brainrot Summary</a>
-          <a href="ads.html" class="nav-dropdown-item">Brainrot Ads</a>
+          <a href="index.html?app=smolworks" class="nav-dropdown-item">
+            <img src="smolworks-icon.png" alt="" class="nav-item-icon">
+            Smolworks
+          </a>
+          <a href="index.html?app=brainrot" class="nav-dropdown-item">
+            <img src="brainrot-icon.png" alt="" class="nav-item-icon">
+            Brainrot
+          </a>
+          <a href="index.html?app=catchr" class="nav-dropdown-item">
+            <img src="catchr-icon.webp" alt="" class="nav-item-icon">
+            Catchr
+          </a>
         </div>
       </div>
       <div class="header-title">
-        <h1>Brainrot</h1>
+        <h1>Smolworks</h1>
         <div class="updated" id="updated"></div>
       </div>
       <!-- Hamburger menu for mobile -->
@@ -105,6 +115,11 @@
           </svg>
         </button>
         <div id="hamburger-dropdown" class="hamburger-dropdown">
+          <div class="menu-section">
+            <div class="menu-label">View</div>
+            <a href="index.html" class="menu-option menu-view-tab active" id="menu-view-overview">Overview</a>
+            <a href="ads.html" class="menu-option menu-view-tab" id="menu-view-ads">Ads</a>
+          </div>
           <div class="menu-section">
             <div class="menu-label">Time Range</div>
             <div class="menu-option" onclick="selectTimeRange('24h')">Last 24 Hours</div>
@@ -135,6 +150,10 @@
       </div>
       <!-- Desktop controls -->
       <div class="controls desktop-controls">
+        <select id="view-select" onchange="handleViewChange(this.value)">
+          <option value="overview" selected>Overview</option>
+          <option value="ads">Ads</option>
+        </select>
         <select id="time-range" onchange="handleTimeRangeChange()">
           <option value="24h" selected>Last 24 Hours</option>
           <option value="today">Today</option>
@@ -312,6 +331,80 @@
   </div>
 
   <script>
+    // App configuration
+    const APP_CONFIG = {
+      smolworks: {
+        id: 'smolworks',
+        name: 'Smolworks',
+        icon: 'smolworks-icon.png',
+        productMap: {
+          '499_1w': '$4.99/wk',
+          '2499_1y': '$24.99/yr',
+          '4999_1y': '$49.99/yr'
+        },
+        productPrefix: '',
+        isCombined: true,
+        apps: ['brainrot', 'catchr']
+      },
+      brainrot: {
+        id: 'brainrot',
+        name: 'Brainrot',
+        icon: 'brainrot-icon.png',
+        productMap: {
+          '499_1w': '$4.99/wk',
+          '2499_1y': '$24.99/yr',
+          '4999_1y': '$49.99/yr'
+        },
+        productPrefix: 'br_'
+      },
+      catchr: {
+        id: 'catchr',
+        name: 'Catchr',
+        icon: 'catchr-icon.webp',
+        productMap: {},
+        productPrefix: ''
+      }
+    };
+
+    // Get app from URL parameter, default to smolworks
+    const urlParams = new URLSearchParams(window.location.search);
+    const APP_ID = urlParams.get('app') || 'smolworks';
+    const APP = APP_CONFIG[APP_ID] || APP_CONFIG.smolworks;
+
+    // Update page elements based on app
+    function initAppBranding() {
+      // Update page title and header
+      document.title = `${APP.name} Dashboard`;
+      document.querySelector('.password-form img').src = APP.icon;
+      document.querySelector('.password-form h2').textContent = `${APP.name} Dashboard`;
+      document.querySelector('.nav-dropdown .header-icon').src = APP.icon;
+      document.querySelector('.nav-dropdown .header-icon').alt = APP.name;
+      document.querySelector('.header-title h1').textContent = APP.name;
+
+      // Update nav dropdown active state (highlight current app)
+      const navItems = document.querySelectorAll('.nav-dropdown-item');
+      navItems.forEach(item => {
+        const href = item.getAttribute('href');
+        // For smolworks, also match when no app param is present (default)
+        const isActive = href.includes(`app=${APP_ID}`) ||
+          (APP_ID === 'smolworks' && !window.location.search.includes('app='));
+        item.classList.toggle('active', isActive);
+      });
+
+      // Update view tab links in hamburger menu to include app parameter
+      const menuViewTabs = document.querySelectorAll('.menu-view-tab');
+      menuViewTabs.forEach(tab => {
+        const href = tab.getAttribute('href');
+        tab.href = `${href}?app=${APP_ID}`;
+      });
+    }
+
+    // Handle view dropdown change
+    function handleViewChange(view) {
+      const targetPage = view === 'ads' ? 'ads.html' : 'index.html';
+      window.location.href = `${targetPage}?app=${APP_ID}`;
+    }
+
     // Page-specific state
     let chart = null;
     let adsData = [];
@@ -321,9 +414,9 @@
     let showAllTransactions = false;
 
     async function fetchData(forceRefresh = false) {
-      const CACHE_KEY = 'brainrot_dashboard_cache';
-      const SUPERWALL_CACHE_KEY = 'brainrot_superwall_cache'; // Shared across pages
-      const TRANSACTIONS_CACHE_KEY = 'brainrot_transactions_cache';
+      const CACHE_KEY = `${APP_ID}_dashboard_cache`;
+      const SUPERWALL_CACHE_KEY = `${APP_ID}_superwall_cache`;
+      const TRANSACTIONS_CACHE_KEY = `${APP_ID}_transactions_cache`;
       const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
 
       // Check cache first
@@ -359,16 +452,19 @@
       // Calculate 180-day cutoff for time filter
       const cutoffDate = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString();
 
+      // Determine which app IDs to fetch
+      const appIds = APP.isCombined ? APP.apps : [APP_ID];
+
       try {
         // Fetch lightweight revenue data for charts (no raw_payload, with pagination)
-        const fetchChartRevenue = async () => {
+        const fetchChartRevenueForApp = async (appId) => {
           let allData = [];
           let offset = 0;
           const limit = 1000;
 
           while (true) {
             const res = await fetch(
-              `${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type,product_id&app_id=eq.brainrot&created_at=gte.${cutoffDate}&order=created_at.asc&limit=${limit}&offset=${offset}`,
+              `${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type,product_id&app_id=eq.${appId}&created_at=gte.${cutoffDate}&order=created_at.asc&limit=${limit}&offset=${offset}`,
               { headers }
             );
             const data = await res.json();
@@ -380,25 +476,36 @@
           return allData;
         };
 
-        // Fetch recent transactions with full data (including raw_payload) - just 50 most recent
-        const fetchRecentTransactions = async () => {
+        // Fetch recent transactions with full data (including raw_payload)
+        const fetchRecentTransactionsForApp = async (appId) => {
           const res = await fetch(
-            `${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type,user_id,product_id,is_refund,raw_payload&app_id=eq.brainrot&order=created_at.desc&limit=50`,
+            `${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type,user_id,product_id,is_refund,raw_payload,app_id&app_id=eq.${appId}&order=created_at.desc&limit=50`,
             { headers }
           );
           return await res.json();
         };
 
-        // Fetch all data in parallel
-        const [adsRes, chartRevenueData, recentTransactions] = await Promise.all([
-          fetch(`${SUPABASE_URL}/rest/v1/meta_ads_hourly?select=hour_utc,spend&app_id=eq.brainrot&order=hour_utc.asc`, { headers }),
-          fetchChartRevenue(),
-          fetchRecentTransactions()
-        ]);
+        // Fetch ads data for app
+        const fetchAdsForApp = async (appId) => {
+          const res = await fetch(
+            `${SUPABASE_URL}/rest/v1/meta_ads_hourly?select=hour_utc,spend&app_id=eq.${appId}&order=hour_utc.asc`,
+            { headers }
+          );
+          return await res.json();
+        };
 
-        adsData = await adsRes.json();
-        revenueData = chartRevenueData;
-        transactionsData = recentTransactions;
+        // Fetch all data for all apps in parallel
+        const allAdsData = await Promise.all(appIds.map(fetchAdsForApp));
+        const allRevenueData = await Promise.all(appIds.map(fetchChartRevenueForApp));
+        const allTransactionsData = await Promise.all(appIds.map(fetchRecentTransactionsForApp));
+
+        // Combine data from all apps
+        adsData = allAdsData.flat();
+        revenueData = allRevenueData.flat();
+        // For transactions, combine and sort by date, then take top 50
+        transactionsData = allTransactionsData.flat()
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          .slice(0, 50);
 
         console.log('Ads data rows fetched:', adsData.length);
         console.log('Revenue data rows fetched:', revenueData.length);
@@ -544,7 +651,7 @@
           label: 'Renewal',
           data: processedData.map(d => d.renewals),
           borderColor: '#9AFCF1',
-          backgroundColor: '#5C9790',
+          backgroundColor: 'rgba(92, 151, 144, 0.75)',
           borderWidth: 2,
           fill: true,
           tension: 0,
@@ -1077,17 +1184,11 @@
         // Format product name
         const formatProductName = (pid) => {
           if (!pid) return '—';
-          const cleaned = pid.replace(/^br_/, '');
+          const cleaned = APP.productPrefix ? pid.replace(new RegExp(`^${APP.productPrefix}`), '') : pid;
 
-          // Map product IDs to display names
-          const productMap = {
-            '499_1w': '$4.99/wk',
-            '2499_1y': '$24.99/yr',
-            '4999_1y': '$49.99/yr'
-          };
-
-          if (productMap[cleaned]) {
-            return productMap[cleaned];
+          // Check app-specific product map
+          if (APP.productMap[cleaned]) {
+            return APP.productMap[cleaned];
           }
 
           // Fallback patterns
@@ -1198,6 +1299,7 @@
     }
 
     // Initialize on load
+    initAppBranding();
     checkAuth();
   </script>
 </body>
