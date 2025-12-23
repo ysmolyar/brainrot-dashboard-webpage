@@ -20,7 +20,7 @@ body {
 /* Header */
 header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
 .main-header { position: relative; z-index: 1000; }
-.header-icon { position: absolute; left: 0; top: 50%; transform: translateY(-50%); }
+.header-icon { position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; min-width: 32px; max-width: 32px; min-height: 32px; max-height: 32px; border-radius: 8px; object-fit: cover; }
 .header-title { position: absolute; left: 50%; transform: translateX(-50%); text-align: center; }
 .main-header .controls { margin-left: auto; }
 h1 { font-size: 1.5rem; }
@@ -30,7 +30,7 @@ h1 { font-size: 1.5rem; }
 @media (max-width: 600px) {
   header { gap: 8px; margin-bottom: 12px; }
   .main-header { min-height: 44px; }
-  .header-icon { position: absolute; left: 0; top: 50%; transform: translateY(-50%); }
+  .header-icon { position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; min-width: 32px; max-width: 32px; min-height: 32px; max-height: 32px; }
   .header-title { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
   .hamburger-menu { top: 50%; transform: translateY(-50%); }
   h1 { font-size: 1.25rem; }
