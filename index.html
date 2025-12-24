@@ -12,7 +12,7 @@
   <!-- Meta tags for better SEO and sharing -->
   <meta name="description" content="Real-time analytics dashboard - track revenue, conversions, and ad spend">
   <meta name="author" content="Smolworks">
-  <meta name="theme-color" content="#111827">
+  <meta name="theme-color" content="#13151A">
 
   <!-- Open Graph tags for social sharing -->
   <meta property="og:title" content="Smolworks Dashboard">
@@ -220,9 +220,9 @@
               <path d="M1 1L4 4L7 1" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </button>
-          <div id="granularity-menu" style="display: none; position: absolute; top: 100%; right: 0; background: #1F2937; border: 1px solid #374151; border-radius: 4px; margin-top: 4px; min-width: 100px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+          <div id="granularity-menu" style="display: none; position: absolute; top: 100%; right: 0; background: #191B1F; border: 1px solid #2A2D35; border-radius: 4px; margin-top: 4px; min-width: 100px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
             <div onclick="selectGranularity('hourly')" style="padding: 8px 12px; cursor: pointer; color: white; font-size: 0.75rem;">Hourly</div>
-            <div onclick="selectGranularity('daily')" style="padding: 8px 12px; cursor: pointer; color: white; font-size: 0.75rem; border-top: 1px solid #374151;">Daily</div>
+            <div onclick="selectGranularity('daily')" style="padding: 8px 12px; cursor: pointer; color: white; font-size: 0.75rem; border-top: 1px solid #2A2D35;">Daily</div>
           </div>
         </div>
       </div>
@@ -232,7 +232,7 @@
       </div>
     </div>
 
-    <div class="chart-container" style="overflow-x: auto; background: #1A202C; padding: 20px;">
+    <div class="chart-container" style="overflow-x: auto; background: #191B1F; padding: 20px;">
       <div class="skeleton-overlay" style="padding: 0 20px;">
         <div class="skeleton skeleton-table-row" style="width: 100%;"></div>
         <div class="skeleton skeleton-table-row" style="width: 95%;"></div>
@@ -241,7 +241,7 @@
       </div>
       <table id="data-table">
         <thead>
-          <tr id="table-header" style="border-bottom: 1px solid #2D3748;">
+          <tr id="table-header" style="border-bottom: 1px solid #2A2D35;">
             <th class="sticky-col">
               <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
@@ -281,7 +281,7 @@
               </div>
             </td>
           </tr>
-          <tr id="net-profit-row" style="border-top: 1px solid #4B5563;">
+          <tr id="net-profit-row" style="border-top: 1px solid #2A2D35;">
             <td class="sticky-col">
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="display: inline-block; width: 12px; height: 12px;"></span>
@@ -294,7 +294,7 @@
     </div>
 
     <!-- Recent Transactions Section -->
-    <div class="chart-container" style="background: #1A202C; padding: 24px; margin-top: 16px;">
+    <div class="chart-container" style="background: #191B1F; padding: 24px; margin-top: 16px;">
       <div style="margin-bottom: 20px;">
         <h2 style="font-size: 1rem; color: white; font-weight: 500;">Recent Transactions</h2>
       </div>
@@ -309,11 +309,11 @@
         <table id="transactions-table" style="width: 100%; border-collapse: collapse;">
           <thead>
             <tr>
-              <th style="text-align: left; padding: 4px 6px 6px 6px; color: #6B7280; font-weight: 400; font-size: 0.75rem; border-bottom: 1px solid #374151;">User</th>
-              <th style="text-align: left; padding: 4px 6px 6px 6px; color: #6B7280; font-weight: 400; font-size: 0.75rem; border-bottom: 1px solid #374151;">Product</th>
-              <th style="text-align: left; padding: 4px 6px 6px 6px; color: #6B7280; font-weight: 400; font-size: 0.75rem; border-bottom: 1px solid #374151;">Proceeds</th>
-              <th style="text-align: left; padding: 4px 6px 6px 6px; color: #6B7280; font-weight: 400; font-size: 0.75rem; border-bottom: 1px solid #374151;">When</th>
-              <th style="text-align: left; padding: 4px 6px 6px 6px; color: #6B7280; font-weight: 400; font-size: 0.75rem; border-bottom: 1px solid #374151;">Type</th>
+              <th style="text-align: left; padding: 4px 6px 6px 6px; color: #6B7280; font-weight: 400; font-size: 0.75rem; border-bottom: 1px solid #2A2D35;">User</th>
+              <th style="text-align: left; padding: 4px 6px 6px 6px; color: #6B7280; font-weight: 400; font-size: 0.75rem; border-bottom: 1px solid #2A2D35;">Product</th>
+              <th style="text-align: left; padding: 4px 6px 6px 6px; color: #6B7280; font-weight: 400; font-size: 0.75rem; border-bottom: 1px solid #2A2D35;">Proceeds</th>
+              <th style="text-align: left; padding: 4px 6px 6px 6px; color: #6B7280; font-weight: 400; font-size: 0.75rem; border-bottom: 1px solid #2A2D35;">When</th>
+              <th style="text-align: left; padding: 4px 6px 6px 6px; color: #6B7280; font-weight: 400; font-size: 0.75rem; border-bottom: 1px solid #2A2D35;">Type</th>
             </tr>
           </thead>
           <tbody id="transactions-tbody">
@@ -595,12 +595,12 @@
       // Calculate ROAS (Return on Ad Spend) - based on new purchases only
       const roas = totals.spend > 0 ? totals.newPurchases / totals.spend : 0;
 
-      document.getElementById('total-proceeds').textContent = '$' + totals.proceeds.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      document.getElementById('total-proceeds').innerHTML = '<span class="currency-symbol">$</span>' + totals.proceeds.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
       document.getElementById('total-conversions').textContent = totalConversions.toLocaleString('en-US');
       document.getElementById('initial-conversions').textContent = initialConversions.toLocaleString('en-US');
-      document.getElementById('total-spend').textContent = '$' + totals.spend.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      document.getElementById('total-spend').innerHTML = '<span class="currency-symbol">$</span>' + totals.spend.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
       document.getElementById('roas').textContent = roas.toFixed(2);
-      document.getElementById('net-profit').textContent = '$' + totals.profit.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      document.getElementById('net-profit').innerHTML = '<span class="currency-symbol">$</span>' + totals.profit.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
       updateChart();
       updateTable();
@@ -708,7 +708,7 @@
                 if (!tooltipEl) {
                   tooltipEl = document.createElement('div');
                   tooltipEl.id = 'chartjs-tooltip';
-                  tooltipEl.style.background = 'rgba(31, 41, 55, 0.95)';
+                  tooltipEl.style.background = 'rgba(25, 27, 31, 0.95)';
                   tooltipEl.style.borderRadius = '8px';
                   tooltipEl.style.color = 'white';
                   tooltipEl.style.opacity = 1;
@@ -718,7 +718,7 @@
                   tooltipEl.style.padding = '12px';
                   tooltipEl.style.fontFamily = 'monospace';
                   tooltipEl.style.fontSize = '12px';
-                  tooltipEl.style.border = '1px solid #374151';
+                  tooltipEl.style.border = '1px solid #2A2D35';
                   document.body.appendChild(tooltipEl);
                 }
 
@@ -879,7 +879,7 @@
                 tickLength: 5,
                 tickColor: '#666666',
                 drawBorder: true,
-                borderColor: '#374151',
+                borderColor: '#2A2D35',
               },
             },
             y: {
@@ -904,7 +904,7 @@
                 },
               },
               grid: {
-                color: '#374151',
+                color: '#2A2D35',
                 drawBorder: false,
               },
             },

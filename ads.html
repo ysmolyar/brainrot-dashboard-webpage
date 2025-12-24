@@ -12,7 +12,7 @@
   <!-- Meta tags for better SEO and sharing -->
   <meta name="description" content="Ad metrics dashboard - track spend, clicks, impressions, and conversions">
   <meta name="author" content="Smolworks">
-  <meta name="theme-color" content="#111827">
+  <meta name="theme-color" content="#13151A">
 
   <!-- Open Graph tags for social sharing -->
   <meta property="og:title" content="Smolworks Ads Dashboard">
@@ -40,7 +40,7 @@
       margin-bottom: 16px;
     }
     .insight {
-      background: #1F2937;
+      background: #191B1F;
       border-radius: 8px;
       padding: 12px 16px;
       margin-bottom: 8px;
@@ -83,7 +83,7 @@
     }
 
     .chart-container {
-      background: #1F2937;
+      background: #191B1F;
       padding: 20px 16px 16px 16px;
       border-radius: 8px;
       margin-bottom: 16px;
@@ -137,7 +137,7 @@
     }
 
     .metric-selector select {
-      background: #374151;
+      background: #2A2D35;
       color: white;
       border: none;
       padding: 6px 24px 6px 8px;
@@ -177,8 +177,8 @@
       position: absolute;
       top: 100%;
       right: 0;
-      background: #1F2937;
-      border: 1px solid #374151;
+      background: #191B1F;
+      border: 1px solid #2A2D35;
       border-radius: 4px;
       margin-top: 4px;
       min-width: 100px;
@@ -198,15 +198,15 @@
     }
 
     .granularity-option:hover {
-      background: #374151;
+      background: #2A2D35;
     }
 
     .granularity-option:not(:last-child) {
-      border-bottom: 1px solid #374151;
+      border-bottom: 1px solid #2A2D35;
     }
 
     .table-container {
-      background: #1A202C;
+      background: #191B1F;
       border-radius: 8px;
       padding: 20px;
       overflow-x: auto;
@@ -236,7 +236,7 @@
       color: #9CA3AF;
       font-weight: 500;
       font-size: 0.8125rem;
-      border-bottom: 1px solid #374151;
+      border-bottom: 1px solid #2A2D35;
       white-space: nowrap;
     }
 
@@ -259,12 +259,12 @@
     }
 
     #ads-table tbody tr:hover {
-      background: #1F2937;
+      background: #191B1F;
     }
 
     #ads-table tfoot td {
       font-weight: 600;
-      border-top: 2px solid #374151;
+      border-top: 2px solid #2A2D35;
       border-bottom: none;
     }
 
@@ -281,7 +281,7 @@
 
     .column-config-btn {
       background: transparent;
-      border: 1px solid #374151;
+      border: 1px solid #2A2D35;
       color: #9CA3AF;
       padding: 6px 12px;
       border-radius: 6px;
@@ -292,7 +292,7 @@
     }
 
     .column-config-btn:hover {
-      background: #374151;
+      background: #2A2D35;
       color: white;
     }
 
@@ -301,8 +301,8 @@
       position: absolute;
       top: 100%;
       right: 0;
-      background: #1F2937;
-      border: 1px solid #374151;
+      background: #191B1F;
+      border: 1px solid #2A2D35;
       border-radius: 8px;
       margin-top: 4px;
       min-width: 200px;
@@ -328,7 +328,7 @@
     }
 
     .column-config-item:hover {
-      background: #374151;
+      background: #2A2D35;
     }
 
     .column-config-item input {
@@ -344,7 +344,7 @@
 
     /* Password box uses different class name in ads.html */
     .password-box {
-      background: #1F2937;
+      background: #191B1F;
       padding: 32px;
       border-radius: 12px;
       text-align: center;
@@ -366,9 +366,9 @@
     .password-box input {
       width: 100%;
       padding: 12px;
-      border: 1px solid #374151;
+      border: 1px solid #2A2D35;
       border-radius: 6px;
-      background: #111827;
+      background: #13151A;
       color: white;
       font-size: 16px;
       margin-bottom: 12px;
@@ -950,14 +950,15 @@
       }
     }
 
-    function formatValue(value, type) {
+    function formatValue(value, type, useHtml = false) {
       if (value === null || value === undefined || isNaN(value)) {
-        return type === 'currency' ? '$0.00' : type === 'percent' ? '0.00%' : '0';
+        return type === 'currency' ? (useHtml ? '<span class="currency-symbol">$</span>0.00' : '$0.00') : type === 'percent' ? '0.00%' : '0';
       }
 
       switch (type) {
         case 'currency':
-          return '$' + parseFloat(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          const formatted = parseFloat(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          return useHtml ? '<span class="currency-symbol">$</span>' + formatted : '$' + formatted;
         case 'percent':
           return parseFloat(value).toFixed(2) + '%';
         case 'decimal':
@@ -1302,7 +1303,7 @@
       const boostedConversions = boostFactor > 1 ? totals.conversions * boostFactor : totals.conversions;
 
       // Update cards
-      document.getElementById('total-spend').textContent = '$' + Math.round(totals.spend).toLocaleString();
+      document.getElementById('total-spend').innerHTML = '<span class="currency-symbol">$</span>' + Math.round(totals.spend).toLocaleString();
 
       // Boost Factor card
       document.getElementById('boost-factor').textContent = boostFactor.toFixed(2) + 'x';
@@ -1311,10 +1312,10 @@
       const cpaEl = document.getElementById('avg-cpa');
       const cpaLabelEl = document.getElementById('cpa-label');
       if (boostEnabled && boostFactor > 1.1 && superwallNewProceeds > 0) {
-        cpaEl.textContent = formatValue(realCpa, 'currency');
+        cpaEl.innerHTML = formatValue(realCpa, 'currency', true);
         cpaLabelEl.textContent = 'Cost per Result (Boosted)';
       } else {
-        cpaEl.textContent = formatValue(avgCpa, 'currency');
+        cpaEl.innerHTML = formatValue(avgCpa, 'currency', true);
         cpaLabelEl.textContent = 'Cost per Result';
       }
 
@@ -1330,7 +1331,7 @@
       }
 
       document.getElementById('avg-ctr').textContent = formatValue(avgCtr, 'percent');
-      document.getElementById('avg-cpc').textContent = formatValue(avgCpc, 'currency');
+      document.getElementById('avg-cpc').innerHTML = formatValue(avgCpc, 'currency', true);
 
       // Generate insights by comparing to prior period (using boosted metrics)
       const priorRange = getPriorPeriodRange(range);
@@ -1826,7 +1827,7 @@
               backgroundColor: 'rgba(31, 41, 55, 0.95)',
               titleColor: '#fff',
               bodyColor: '#fff',
-              borderColor: '#374151',
+              borderColor: '#2A2D35',
               borderWidth: 1,
               padding: 12,
               callbacks: {
@@ -1872,7 +1873,7 @@
                 callback: v => formatChartAxisValue(v, leftType),
               },
               grid: {
-                color: '#374151',
+                color: '#2A2D35',
                 drawBorder: false,
               },
             },
