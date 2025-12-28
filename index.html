@@ -483,13 +483,24 @@
           return await res.json();
         };
 
-        // Fetch ads data for app
+        // Fetch ads data for app (with pagination)
         const fetchAdsForApp = async (appId) => {
-          const res = await fetch(
-            `${SUPABASE_URL}/rest/v1/meta_ads_hourly?select=hour_utc,spend&app_id=eq.${appId}&order=hour_utc.asc`,
-            { headers }
-          );
-          return await res.json();
+          let allData = [];
+          let offset = 0;
+          const limit = 1000;
+
+          while (true) {
+            const res = await fetch(
+              `${SUPABASE_URL}/rest/v1/meta_ads_hourly?select=hour_utc,spend&app_id=eq.${appId}&order=hour_utc.asc&limit=${limit}&offset=${offset}`,
+              { headers }
+            );
+            const data = await res.json();
+            allData = allData.concat(data);
+
+            if (data.length < limit) break;
+            offset += limit;
+          }
+          return allData;
         };
 
         // Fetch all data for all apps in parallel
