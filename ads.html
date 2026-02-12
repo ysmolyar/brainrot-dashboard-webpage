@@ -451,6 +451,12 @@
             <a href="ads.html" class="menu-option menu-view-tab active" id="menu-view-ads">Ads</a>
           </div>
           <div class="menu-section">
+            <div class="menu-label">Platform</div>
+            <div class="menu-option menu-platform-option" onclick="selectPlatform('all'); toggleHamburgerMenu();">All Platforms</div>
+            <div class="menu-option menu-platform-option" onclick="selectPlatform('meta'); toggleHamburgerMenu();">Meta</div>
+            <div class="menu-option menu-platform-option" onclick="selectPlatform('tiktok'); toggleHamburgerMenu();">TikTok</div>
+          </div>
+          <div class="menu-section">
             <div class="menu-label">Time Range</div>
             <div class="menu-option" onclick="selectTimeRange('24h')">Last 24 Hours</div>
             <div class="menu-option" onclick="selectTimeRange('today')">Today</div>
@@ -514,6 +520,12 @@
       </div>
     </header>
 
+    <div class="view-tabs" id="platform-tabs" style="margin-bottom: 12px;">
+      <span class="view-tab" data-platform="all" onclick="selectPlatform('all')">All</span>
+      <span class="view-tab" data-platform="meta" onclick="selectPlatform('meta')">Meta</span>
+      <span class="view-tab" data-platform="tiktok" onclick="selectPlatform('tiktok')">TikTok</span>
+    </div>
+
     <div class="cards">
       <div class="card">
         <div class="card-value" id="total-spend">$0</div>
@@ -571,7 +583,7 @@
               <option value="cpa">Cost per Result</option>
               <option value="conversions">Results</option>
               <option value="conversion_value">Results Value</option>
-              <option value="purchase_roas">Meta ROAS</option>
+              <option value="purchase_roas">Reported ROAS</option>
               <option value="appstore_conv">App Store Conv</option>
               <option value="onboarding_conv">Onboarding Conv</option>
               <option value="impressions">Impressions</option>
@@ -596,7 +608,7 @@
               <option value="cpa">Cost per Result</option>
               <option value="conversions">Results</option>
               <option value="conversion_value">Results Value</option>
-              <option value="purchase_roas">Meta ROAS</option>
+              <option value="purchase_roas">Reported ROAS</option>
               <option value="appstore_conv">App Store Conv</option>
               <option value="onboarding_conv">Onboarding Conv</option>
               <option value="impressions">Impressions</option>
@@ -709,25 +721,44 @@
     }
 
     // Page-specific state
-    let adsData = [];
+    let metaAdsData = [];
+    let tiktokAdsData = [];
+    let adsData = [];        // Active dataset (filtered by platform)
     let superwallData = [];
     let chart = null;
     let chartData = [];
+    let activePlatform = localStorage.getItem('ads_active_platform') || 'all'; // 'meta' | 'tiktok' | 'all'
     let boostEnabled = localStorage.getItem(`${APP_ID}_boost_enabled`) !== 'false'; // Default to true
 
+    function applyPlatformFilter() {
+      switch (activePlatform) {
+        case 'meta':
+          adsData = metaAdsData;
+          break;
+        case 'tiktok':
+          adsData = tiktokAdsData;
+          break;
+        case 'all':
+        default:
+          adsData = [...metaAdsData, ...tiktokAdsData];
+          break;
+      }
+    }
+
     // All available columns with their display names and formatting
+    // 'platforms' array restricts a column to specific platforms; omit for all platforms
     const ALL_COLUMNS = {
       hour: { label: 'Hour', type: 'time', alwaysShow: true },
       spend: { label: 'Amount Spent', type: 'currency', default: true },
       cpm: { label: 'CPM', type: 'currency', default: true },
       ctr: { label: 'CTR', type: 'percent', default: true },
       cpc: { label: 'CPC', type: 'currency', default: true },
-      appstore_conv: { label: 'App Store Conv', type: 'percent', default: true },
-      onboarding_conv: { label: 'Onboarding Conv', type: 'percent', default: true },
+      appstore_conv: { label: 'App Store Conv', type: 'percent', default: true, platforms: ['meta'] },
+      onboarding_conv: { label: 'Onboarding Conv', type: 'percent', default: true, platforms: ['meta'] },
       cpa: { label: 'Cost per Result', type: 'currency', default: true },
       conversions: { label: 'Results', type: 'number', default: true },
       conversion_value: { label: 'Results Value', type: 'currency', default: true },
-      purchase_roas: { label: 'Results ROAS', type: 'decimal', default: true },
+      purchase_roas: { label: 'Reported ROAS', type: 'decimal', default: true },
       // Superwall columns
       sw_new_proceeds: { label: 'SW New $', type: 'currency', default: false },
       sw_renewal_proceeds: { label: 'SW Renewal $', type: 'currency', default: false },
@@ -736,16 +767,16 @@
       // Additional columns (hidden by default)
       impressions: { label: 'Impressions', type: 'number', default: false },
       clicks: { label: 'Clicks', type: 'number', default: false },
-      reach: { label: 'Reach', type: 'number', default: false },
-      frequency: { label: 'Frequency', type: 'decimal', default: false },
-      link_clicks: { label: 'Link Clicks', type: 'number', default: false },
+      reach: { label: 'Reach', type: 'number', default: false, platforms: ['meta'] },
+      frequency: { label: 'Frequency', type: 'decimal', default: false, platforms: ['meta'] },
+      link_clicks: { label: 'Link Clicks', type: 'number', default: false, platforms: ['meta'] },
       app_installs: { label: 'App Installs', type: 'number', default: false },
-      cost_per_install: { label: 'Cost per Install', type: 'currency', default: false }
+      cost_per_install: { label: 'Cost per Install', type: 'currency', default: false, platforms: ['meta'] }
     };
 
     // Load visible columns from localStorage or use defaults
-    // Version 3: Reset columns to include new Superwall columns
-    const COLUMNS_VERSION = 3;
+    // Version 4: Reset columns for TikTok ads support
+    const COLUMNS_VERSION = 4;
     const storedVersion = localStorage.getItem('ads_columns_version');
     if (storedVersion !== String(COLUMNS_VERSION)) {
       localStorage.removeItem('ads_visible_columns');
@@ -772,6 +803,8 @@
 
       Object.entries(ALL_COLUMNS).forEach(([key, col]) => {
         if (col.alwaysShow) return; // Skip hour column
+        // Hide platform-specific columns when viewing another platform
+        if (col.platforms && activePlatform !== 'all' && !col.platforms.includes(activePlatform)) return;
 
         const item = document.createElement('label');
         item.className = 'column-config-item';
@@ -795,24 +828,29 @@
     }
 
     async function fetchData(forceRefresh = false) {
-      const CACHE_KEY = `${APP_ID}_ads_cache`;
+      const META_CACHE_KEY = `${APP_ID}_ads_cache`;
+      const TIKTOK_CACHE_KEY = `${APP_ID}_tiktok_ads_cache`;
       const SUPERWALL_CACHE_KEY = `${APP_ID}_superwall_cache`; // Shared across pages
       const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
 
       // Check cache first
       if (!forceRefresh) {
-        const cached = localStorage.getItem(CACHE_KEY);
+        const metaCached = localStorage.getItem(META_CACHE_KEY);
+        const tiktokCached = localStorage.getItem(TIKTOK_CACHE_KEY);
         const superwallCached = localStorage.getItem(SUPERWALL_CACHE_KEY);
 
-        if (cached && superwallCached) {
-          const cacheData = JSON.parse(cached);
+        if (metaCached && tiktokCached && superwallCached) {
+          const metaCache = JSON.parse(metaCached);
+          const ttCache = JSON.parse(tiktokCached);
           const swCache = JSON.parse(superwallCached);
-          const cacheAge = Date.now() - cacheData.timestamp;
-          const swCacheAge = Date.now() - swCache.timestamp;
 
-          if (cacheAge < CACHE_DURATION && swCacheAge < CACHE_DURATION) {
-            adsData = cacheData.adsData;
+          if (Date.now() - metaCache.timestamp < CACHE_DURATION &&
+              Date.now() - ttCache.timestamp < CACHE_DURATION &&
+              Date.now() - swCache.timestamp < CACHE_DURATION) {
+            metaAdsData = metaCache.adsData;
+            tiktokAdsData = ttCache.adsData;
             superwallData = swCache.data;
+            applyPlatformFilter();
             updateSubtitle();
             render();
             return;
@@ -829,8 +867,8 @@
       const appIds = APP.isCombined ? APP.apps : [APP_ID];
 
       try {
-        // Fetch all ads data with all metrics for an app
-        const fetchAllAdsForApp = async (appId) => {
+        // Fetch Meta ads data with all metrics for an app
+        const fetchAllMetaAdsForApp = async (appId) => {
           let allData = [];
           let offset = 0;
           const limit = 1000;
@@ -846,7 +884,38 @@
             if (data.length < limit) break;
             offset += limit;
           }
-          return allData;
+          return allData.map(row => ({ ...row, _platform: 'meta' }));
+        };
+
+        // Fetch TikTok ads data with all metrics for an app
+        const fetchAllTikTokAdsForApp = async (appId) => {
+          let allData = [];
+          let offset = 0;
+          const limit = 1000;
+
+          while (true) {
+            const res = await fetch(
+              `${SUPABASE_URL}/rest/v1/tiktok_ads_hourly?select=*&app_id=eq.${appId}&order=hour_utc.asc&limit=${limit}&offset=${offset}`,
+              { headers }
+            );
+            const data = await res.json();
+            allData = allData.concat(data);
+
+            if (data.length < limit) break;
+            offset += limit;
+          }
+          // Normalize TikTok fields to common schema
+          return allData.map(row => ({
+            ...row,
+            _platform: 'tiktok',
+            conversion_value: parseFloat(row.purchase_value) || 0,
+            purchase_roas: (parseFloat(row.spend) || 0) > 0
+              ? (parseFloat(row.purchase_value) || 0) / (parseFloat(row.spend) || 0)
+              : 0,
+            reach: null,
+            frequency: null,
+            link_clicks: null,
+          }));
         };
 
         // Check if we can use shared Superwall cache
@@ -881,10 +950,16 @@
           return allData;
         };
 
-        // Fetch ads data for all apps
-        const allAdsData = await Promise.all(appIds.map(fetchAllAdsForApp));
-        adsData = allAdsData.flat();
-        console.log('Ads data rows fetched:', adsData.length);
+        // Fetch ads data for all apps (Meta + TikTok in parallel)
+        const [allMetaAdsData, allTikTokAdsData] = await Promise.all([
+          Promise.all(appIds.map(fetchAllMetaAdsForApp)),
+          Promise.all(appIds.map(fetchAllTikTokAdsForApp)),
+        ]);
+        metaAdsData = allMetaAdsData.flat();
+        tiktokAdsData = allTikTokAdsData.flat();
+        applyPlatformFilter();
+        console.log('Meta ads rows fetched:', metaAdsData.length);
+        console.log('TikTok ads rows fetched:', tiktokAdsData.length);
 
         if (needSuperwallFetch) {
           const allSuperwallData = await Promise.all(appIds.map(fetchAllSuperwallForApp));
@@ -898,12 +973,15 @@
           }));
         }
 
-        // Save to ads cache (without Superwall data - use shared cache instead)
-        const cacheData = {
+        // Save to separate caches per platform
+        localStorage.setItem(META_CACHE_KEY, JSON.stringify({
           timestamp: Date.now(),
-          adsData: adsData
-        };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+          adsData: metaAdsData
+        }));
+        localStorage.setItem(TIKTOK_CACHE_KEY, JSON.stringify({
+          timestamp: Date.now(),
+          adsData: tiktokAdsData
+        }));
 
         updateSubtitle();
         render();
@@ -951,7 +1029,9 @@
     }
 
     function formatValue(value, type, useHtml = false) {
-      if (value === null || value === undefined || isNaN(value)) {
+      // Show "--" for null (platform-inapplicable metrics)
+      if (value === null) return '--';
+      if (value === undefined || isNaN(value)) {
         return type === 'currency' ? (useHtml ? '<span class="currency-symbol">$</span>0.00' : '$0.00') : type === 'percent' ? '0.00%' : '0';
       }
 
@@ -1062,7 +1142,7 @@
       const cpaChange = percentChange(currentMetrics.cpa, priorMetrics.cpa);
       const spendChange = percentChange(currentMetrics.spend, priorMetrics.spend);
 
-      // Use real ROAS (boosted) if available, otherwise fall back to Meta ROAS
+      // Use real ROAS (boosted) if available, otherwise fall back to reported ROAS
       const currentRoas = currentMetrics.realRoas > 0 ? currentMetrics.realRoas : currentMetrics.roas;
       const priorRoas = priorMetrics.realRoas > 0 ? priorMetrics.realRoas : priorMetrics.roas;
       const roasChange = percentChange(currentRoas, priorRoas);
@@ -1368,7 +1448,8 @@
       tbody.innerHTML = '';
 
       // Update table title based on granularity
-      document.querySelector('.table-title').textContent = granularity === 'daily' ? 'Daily Ad Metrics' : 'Hourly Ad Metrics';
+      const platformLabel = activePlatform === 'all' ? '' : activePlatform === 'meta' ? 'Meta ' : 'TikTok ';
+      document.querySelector('.table-title').textContent = granularity === 'daily' ? `${platformLabel}Daily Ad Metrics` : `${platformLabel}Hourly Ad Metrics`;
 
       // Prepare table data based on granularity
       let tableRows = [];
@@ -1388,9 +1469,10 @@
               clicks: 0,
               conversions: 0,
               conversion_value: 0,
-              link_clicks: 0,
+              link_clicks: row.link_clicks === null ? null : 0,
               app_installs: 0,
-              reach: 0
+              reach: row.reach === null ? null : 0,
+              _hasMetaData: row._platform === 'meta'
             });
           }
 
@@ -1400,13 +1482,19 @@
           day.clicks += parseInt(row.clicks) || 0;
           day.conversions += parseFloat(row.conversions) || 0;
           day.conversion_value += parseFloat(row.conversion_value) || 0;
-          day.link_clicks += parseInt(row.link_clicks) || 0;
+          if (row.link_clicks !== null) {
+            day.link_clicks = (day.link_clicks || 0) + (parseInt(row.link_clicks) || 0);
+            day._hasMetaData = true;
+          }
           day.app_installs += parseInt(row.app_installs) || 0;
-          day.reach += parseInt(row.reach) || 0;
+          if (row.reach !== null) {
+            day.reach = (day.reach || 0) + (parseInt(row.reach) || 0);
+          }
         });
 
         tableRows = Array.from(dailyMap.values()).map(day => {
           const swProceeds = calculateSuperwallProceedsForDay(day.dayKey);
+          const hasMetaFields = day._hasMetaData;
           return {
             hour: day.hour,
             spend: day.spend,
@@ -1416,16 +1504,16 @@
             cpc: day.clicks > 0 ? day.spend / day.clicks : 0,
             cpm: day.impressions > 0 ? (day.spend / day.impressions) * 1000 : 0,
             reach: day.reach,
-            frequency: day.reach > 0 ? day.impressions / day.reach : 0,
+            frequency: day.reach === null ? null : (day.reach > 0 ? day.impressions / day.reach : 0),
             link_clicks: day.link_clicks,
             app_installs: day.app_installs,
             conversions: day.conversions,
             conversion_value: day.conversion_value,
             cpa: day.conversions > 0 ? day.spend / day.conversions : 0,
             purchase_roas: day.spend > 0 ? day.conversion_value / day.spend : 0,
-            cost_per_install: day.app_installs > 0 ? day.spend / day.app_installs : 0,
-            appstore_conv: day.link_clicks > 0 ? (day.app_installs / day.link_clicks) * 100 : 0,
-            onboarding_conv: day.app_installs > 0 ? (day.conversions / day.app_installs) * 100 : 0,
+            cost_per_install: hasMetaFields ? (day.app_installs > 0 ? day.spend / day.app_installs : 0) : null,
+            appstore_conv: day.link_clicks === null ? null : (day.link_clicks > 0 ? (day.app_installs / day.link_clicks) * 100 : 0),
+            onboarding_conv: day.link_clicks === null ? null : (day.app_installs > 0 ? (day.conversions / day.app_installs) * 100 : 0),
             sw_new_proceeds: swProceeds.newProceeds,
             sw_renewal_proceeds: swProceeds.renewalProceeds,
             sw_total_proceeds: swProceeds.totalProceeds,
@@ -1440,10 +1528,10 @@
           const impressions = parseInt(row.impressions) || 0;
           const conversions = parseFloat(row.conversions) || 0;
           const appInstalls = parseInt(row.app_installs) || 0;
-          const linkClicks = parseInt(row.link_clicks) || 0;
-          const costPerInstall = appInstalls > 0 ? spend / appInstalls : 0;
-          const appstoreConv = linkClicks > 0 ? (appInstalls / linkClicks) * 100 : 0;
-          const onboardingConv = appInstalls > 0 ? (conversions / appInstalls) * 100 : 0;
+          const linkClicks = row.link_clicks === null ? null : (parseInt(row.link_clicks) || 0);
+          const costPerInstall = row.link_clicks === null ? null : (appInstalls > 0 ? spend / appInstalls : 0);
+          const appstoreConv = row.link_clicks === null ? null : (linkClicks > 0 ? (appInstalls / linkClicks) * 100 : 0);
+          const onboardingConv = row.link_clicks === null ? null : (appInstalls > 0 ? (conversions / appInstalls) * 100 : 0);
           const rowSwProceeds = calculateSuperwallProceedsForHour(row.hour_utc);
 
           return {
@@ -1454,8 +1542,8 @@
             ctr: parseFloat(row.ctr) || 0,
             cpc: parseFloat(row.cpc) || 0,
             cpm: parseFloat(row.cpm) || 0,
-            reach: parseInt(row.reach) || 0,
-            frequency: parseFloat(row.frequency) || 0,
+            reach: row.reach === null ? null : (parseInt(row.reach) || 0),
+            frequency: row.frequency === null ? null : (parseFloat(row.frequency) || 0),
             link_clicks: linkClicks,
             app_installs: appInstalls,
             conversions: conversions,
@@ -1514,10 +1602,11 @@
       const totalsRow = document.getElementById('ads-totals-row');
       totalsRow.innerHTML = '';
 
-      // Calculate total conversion rates
-      const totalCostPerInstall = totals.app_installs > 0 ? totals.spend / totals.app_installs : 0;
-      const totalAppstoreConv = totals.link_clicks > 0 ? (totals.app_installs / totals.link_clicks) * 100 : 0;
-      const totalOnboardingConv = totals.app_installs > 0 ? (totals.conversions / totals.app_installs) * 100 : 0;
+      // Calculate total conversion rates (null for TikTok-only where Meta-specific fields don't apply)
+      const hasMetaFields = activePlatform !== 'tiktok';
+      const totalCostPerInstall = hasMetaFields ? (totals.app_installs > 0 ? totals.spend / totals.app_installs : 0) : null;
+      const totalAppstoreConv = hasMetaFields ? (totals.link_clicks > 0 ? (totals.app_installs / totals.link_clicks) * 100 : 0) : null;
+      const totalOnboardingConv = hasMetaFields ? (totals.app_installs > 0 ? (totals.conversions / totals.app_installs) * 100 : 0) : null;
 
       const totalValues = {
         hour: 'Total',
@@ -1527,9 +1616,9 @@
         ctr: avgCtr,
         cpc: avgCpc,
         cpm: avgCpm,
-        reach: totals.reach,
-        frequency: totals.reach > 0 ? totals.impressions / totals.reach : 0,
-        link_clicks: totals.link_clicks,
+        reach: hasMetaFields ? totals.reach : null,
+        frequency: hasMetaFields ? (totals.reach > 0 ? totals.impressions / totals.reach : 0) : null,
+        link_clicks: hasMetaFields ? totals.link_clicks : null,
         app_installs: totals.app_installs,
         conversions: totals.conversions,
         conversion_value: totals.conversion_value,
@@ -1717,7 +1806,7 @@
       cpa: { label: 'Cost per Result', type: 'currency' },
       conversions: { label: 'Results', type: 'number' },
       conversion_value: { label: 'Results Value', type: 'currency' },
-      purchase_roas: { label: 'Meta ROAS', type: 'decimal' },
+      purchase_roas: { label: 'Reported ROAS', type: 'decimal' },
       appstore_conv: { label: 'App Store Conv', type: 'percent' },
       onboarding_conv: { label: 'Onboarding Conv', type: 'percent' },
       impressions: { label: 'Impressions', type: 'number' },
@@ -1961,6 +2050,41 @@
       render();
     }
 
+    function selectPlatform(platform) {
+      activePlatform = platform;
+      localStorage.setItem('ads_active_platform', platform);
+      // Update desktop pill toggle
+      document.querySelectorAll('#platform-tabs .view-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.platform === platform);
+      });
+      // Update hamburger menu
+      updateHamburgerMenuSelection();
+      // Update chart metric options visibility
+      updateChartMetricOptions();
+      applyPlatformFilter();
+      render();
+    }
+
+    function updateChartMetricOptions() {
+      const metaOnlyMetrics = ['appstore_conv', 'onboarding_conv'];
+      document.querySelectorAll('#chart-metric-left option, #chart-metric-right option').forEach(opt => {
+        if (metaOnlyMetrics.includes(opt.value)) {
+          opt.style.display = (activePlatform === 'tiktok') ? 'none' : '';
+          // Reset selection if hidden metric is currently selected
+          if (activePlatform === 'tiktok' && opt.selected) {
+            opt.parentElement.value = 'spend';
+          }
+        }
+      });
+    }
+
+    function initPlatformTabs() {
+      // Set active tab from stored state
+      document.querySelectorAll('#platform-tabs .view-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.platform === activePlatform);
+      });
+    }
+
     function initBoostToggle() {
       // Initialize checkboxes from localStorage
       document.getElementById('boost-toggle-desktop').checked = boostEnabled;
@@ -1987,9 +2111,16 @@
         'America/Los_Angeles': 'PST',
         'America/New_York': 'EST'
       };
+      const platformLabels = {
+        'all': 'All Platforms',
+        'meta': 'Meta',
+        'tiktok': 'TikTok'
+      };
 
       document.querySelectorAll('.hamburger-dropdown .menu-option').forEach(opt => {
-        if (opt.textContent === timeLabels[timeRange] || opt.textContent === tzLabels[timezone]) {
+        if (opt.textContent === timeLabels[timeRange] ||
+            opt.textContent === tzLabels[timezone] ||
+            opt.textContent === platformLabels[activePlatform]) {
           opt.classList.add('selected');
         }
       });
@@ -2016,11 +2147,12 @@
       }
     });
 
-    // Override showDashboard to also initialize boost toggle
+    // Override showDashboard to also initialize boost toggle and platform tabs
     function showDashboard() {
       document.getElementById('password-gate').classList.add('hidden');
       document.getElementById('dashboard-content').classList.add('visible');
       initBoostToggle();
+      initPlatformTabs();
       fetchData();
     }
 

@@ -272,12 +272,20 @@
               </div>
             </td>
           </tr>
-          <tr id="spend-row">
+          <tr id="meta-spend-row">
             <td class="sticky-col">
               <div style="display: flex; align-items: center; gap: 8px;">
                 <input type="checkbox" id="toggle-spend" checked onchange="updateChart()" style="display: none;">
                 <label for="toggle-spend" style="display: inline-block; width: 12px; height: 12px; background: #EF4444; border-radius: 2px; cursor: pointer;"></label>
-                <span>Spend</span>
+                <span>Meta Spend</span>
+              </div>
+            </td>
+          </tr>
+          <tr id="tiktok-spend-row">
+            <td class="sticky-col">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="display: inline-block; width: 12px; height: 12px; background: #F97316; border-radius: 2px;"></span>
+                <span>TikTok Spend</span>
               </div>
             </td>
           </tr>
@@ -483,8 +491,8 @@
           return await res.json();
         };
 
-        // Fetch ads data for app (with pagination)
-        const fetchAdsForApp = async (appId) => {
+        // Fetch Meta ads data for app (with pagination)
+        const fetchMetaAdsForApp = async (appId) => {
           let allData = [];
           let offset = 0;
           const limit = 1000;
@@ -503,13 +511,39 @@
           return allData;
         };
 
-        // Fetch all data for all apps in parallel
-        const allAdsData = await Promise.all(appIds.map(fetchAdsForApp));
-        const allRevenueData = await Promise.all(appIds.map(fetchChartRevenueForApp));
-        const allTransactionsData = await Promise.all(appIds.map(fetchRecentTransactionsForApp));
+        // Fetch TikTok ads data for app (with pagination)
+        const fetchTikTokAdsForApp = async (appId) => {
+          let allData = [];
+          let offset = 0;
+          const limit = 1000;
 
-        // Combine data from all apps
-        adsData = allAdsData.flat();
+          while (true) {
+            const res = await fetch(
+              `${SUPABASE_URL}/rest/v1/tiktok_ads_hourly?select=hour_utc,spend&app_id=eq.${appId}&order=hour_utc.asc&limit=${limit}&offset=${offset}`,
+              { headers }
+            );
+            const data = await res.json();
+            allData = allData.concat(data);
+
+            if (data.length < limit) break;
+            offset += limit;
+          }
+          return allData;
+        };
+
+        // Fetch all data for all apps in parallel
+        const [allMetaAdsData, allTikTokAdsData, allRevenueData, allTransactionsData] = await Promise.all([
+          Promise.all(appIds.map(fetchMetaAdsForApp)),
+          Promise.all(appIds.map(fetchTikTokAdsForApp)),
+          Promise.all(appIds.map(fetchChartRevenueForApp)),
+          Promise.all(appIds.map(fetchRecentTransactionsForApp)),
+        ]);
+
+        // Combine Meta + TikTok ads data (tagged with platform)
+        adsData = [
+          ...allMetaAdsData.flat().map(r => ({ ...r, _platform: 'meta' })),
+          ...allTikTokAdsData.flat().map(r => ({ ...r, _platform: 'tiktok' })),
+        ];
         revenueData = allRevenueData.flat();
         // For transactions, combine and sort by date, then take top 50
         transactionsData = allTransactionsData.flat()
@@ -550,12 +584,18 @@
 
       const map = new Map();
 
-      // Aggregate ad spend
+      // Aggregate ad spend (separate Meta vs TikTok)
       (adsData || []).forEach(row => {
         const key = createBucketKey(row.hour_utc, start, end);
         if (key) {
-          const existing = map.get(key) || { bucket: key, spend: 0, newPurchases: 0, renewals: 0 };
-          existing.spend += parseFloat(row.spend) || 0;
+          const existing = map.get(key) || { bucket: key, spend: 0, metaSpend: 0, tiktokSpend: 0, newPurchases: 0, renewals: 0 };
+          const amount = parseFloat(row.spend) || 0;
+          existing.spend += amount;
+          if (row._platform === 'tiktok') {
+            existing.tiktokSpend += amount;
+          } else {
+            existing.metaSpend += amount;
+          }
           map.set(key, existing);
         }
       });
@@ -564,7 +604,7 @@
       (revenueData || []).forEach(row => {
         const key = createBucketKey(row.created_at, start, end);
         if (key) {
-          const existing = map.get(key) || { bucket: key, spend: 0, newPurchases: 0, renewals: 0 };
+          const existing = map.get(key) || { bucket: key, spend: 0, metaSpend: 0, tiktokSpend: 0, newPurchases: 0, renewals: 0 };
           const proceeds = parseFloat(row.proceeds) || 0;
 
           if (row.event_type === 'renewal') {
@@ -631,7 +671,10 @@
       document.querySelectorAll('#renewal-row td:not(.sticky-col)').forEach(td => {
         td.style.color = showRenewal ? 'white' : '#6B7280';
       });
-      document.querySelectorAll('#spend-row td:not(.sticky-col)').forEach(td => {
+      document.querySelectorAll('#meta-spend-row td:not(.sticky-col)').forEach(td => {
+        td.style.color = showSpend ? 'white' : '#6B7280';
+      });
+      document.querySelectorAll('#tiktok-spend-row td:not(.sticky-col)').forEach(td => {
         td.style.color = showSpend ? 'white' : '#6B7280';
       });
 
@@ -670,21 +713,34 @@
       }
 
       if (showSpend) {
+        // Meta Spend: base layer, fills down to x-axis
         datasetMap[2] = {
-          label: 'Ad Spend',
-          data: processedData.map(d => d.spend),
-          borderColor: '#EF4444', // More muted red
-          backgroundColor: 'rgba(220, 38, 38, 0.7)', // Semi-transparent darker red
+          label: 'Meta Spend',
+          data: processedData.map(d => d.metaSpend),
+          borderColor: '#EF4444',
+          backgroundColor: 'rgba(220, 38, 38, 0.7)',
           borderWidth: 2,
           fill: true,
           tension: 0,
           pointRadius: 0,
-          order: 2, // Render in middle (z-index)
+          order: 2,
+        };
+        // TikTok Spend: stacked on top of Meta (data = meta + tiktok, fill between this and Meta)
+        datasetMap[3] = {
+          label: 'TikTok Spend',
+          data: processedData.map(d => d.metaSpend + d.tiktokSpend),
+          borderColor: '#F97316',
+          backgroundColor: 'rgba(234, 88, 12, 0.7)',
+          borderWidth: 2,
+          fill: '-1', // Fill between this dataset and the previous one (Meta Spend)
+          tension: 0,
+          pointRadius: 0,
+          order: 2,
         };
       }
 
-      // Add datasets in index order (0, 1, 2) to ensure New, Renewal, Spend order
-      for (let i = 0; i < 3; i++) {
+      // Add datasets in index order to ensure New, Renewal, Meta Spend, TikTok Spend order
+      for (let i = 0; i < 4; i++) {
         if (datasetMap[i]) {
           datasets.push(datasetMap[i]);
         }
@@ -785,7 +841,8 @@
                     // Find each dataset in order
                     const newItem = items.find(item => item.dataset.label === 'New');
                     const renewalItem = items.find(item => item.dataset.label === 'Renewal');
-                    const spendItem = items.find(item => item.dataset.label === 'Ad Spend');
+                    const metaSpendItem = items.find(item => item.dataset.label === 'Meta Spend');
+                    const tiktokSpendItem = items.find(item => item.dataset.label === 'TikTok Spend');
 
                     // Net Profit
                     const netProfit = grossProceeds - data.spend;
@@ -801,8 +858,14 @@
                     if (renewalItem) {
                       innerHtml += `<tr><td><span style="color: #22D3D3;">●</span> Renewal</td><td style="text-align: right; padding-left: 16px; color: ${numColor};">$${renewalItem.raw.toFixed(2)}</td></tr>`;
                     }
-                    if (spendItem) {
-                      innerHtml += `<tr><td><span style="color: #EF4444;">●</span> Spend</td><td style="text-align: right; padding-left: 16px; color: ${numColor};">$${spendItem.raw.toFixed(2)}</td></tr>`;
+                    if (metaSpendItem || tiktokSpendItem) {
+                      innerHtml += `<tr><td>Ad Spend</td><td style="text-align: right; padding-left: 16px; color: ${numColor};">$${data.spend.toFixed(2)}</td></tr>`;
+                    }
+                    if (metaSpendItem && data.metaSpend > 0) {
+                      innerHtml += `<tr><td><span style="color: #EF4444;">●</span> Meta</td><td style="text-align: right; padding-left: 16px; color: ${numColor};">$${data.metaSpend.toFixed(2)}</td></tr>`;
+                    }
+                    if (tiktokSpendItem && data.tiktokSpend > 0) {
+                      innerHtml += `<tr><td><span style="color: #F97316;">●</span> TikTok</td><td style="text-align: right; padding-left: 16px; color: ${numColor};">$${data.tiktokSpend.toFixed(2)}</td></tr>`;
                     }
                     innerHtml += `<tr style="margin-top: 6px;"><td>Net Profit</td><td style="text-align: right; padding-left: 16px; color: ${netProfitColor};">$${netProfit.toFixed(2)}</td></tr>`;
                     innerHtml += `</table>`;
@@ -937,14 +1000,16 @@
       const headerRow = document.getElementById('table-header');
       const newRow = document.getElementById('new-row');
       const renewalRow = document.getElementById('renewal-row');
-      const spendRow = document.getElementById('spend-row');
+      const metaSpendRow = document.getElementById('meta-spend-row');
+      const tiktokSpendRow = document.getElementById('tiktok-spend-row');
       const netProfitRow = document.getElementById('net-profit-row');
 
       // Clear existing data cells (keep first sticky column)
       while (headerRow.children.length > 1) headerRow.removeChild(headerRow.lastChild);
       while (newRow.children.length > 1) newRow.removeChild(newRow.lastChild);
       while (renewalRow.children.length > 1) renewalRow.removeChild(renewalRow.lastChild);
-      while (spendRow.children.length > 1) spendRow.removeChild(spendRow.lastChild);
+      while (metaSpendRow.children.length > 1) metaSpendRow.removeChild(metaSpendRow.lastChild);
+      while (tiktokSpendRow.children.length > 1) tiktokSpendRow.removeChild(tiktokSpendRow.lastChild);
       while (netProfitRow.children.length > 1) netProfitRow.removeChild(netProfitRow.lastChild);
 
       // Add data columns for each time period
@@ -991,11 +1056,17 @@
         renewalTd.style.color = 'white';
         renewalRow.appendChild(renewalTd);
 
-        // Spend
-        const spendTd = document.createElement('td');
-        spendTd.textContent = '$' + row.spend.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        spendTd.style.color = 'white';
-        spendRow.appendChild(spendTd);
+        // Meta Spend
+        const metaSpendTd = document.createElement('td');
+        metaSpendTd.textContent = '$' + row.metaSpend.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        metaSpendTd.style.color = 'white';
+        metaSpendRow.appendChild(metaSpendTd);
+
+        // TikTok Spend
+        const tiktokSpendTd = document.createElement('td');
+        tiktokSpendTd.textContent = '$' + row.tiktokSpend.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        tiktokSpendTd.style.color = 'white';
+        tiktokSpendRow.appendChild(tiktokSpendTd);
 
         // Net Profit
         const netProfit = row.newPurchases + row.renewals - row.spend;
@@ -1010,7 +1081,9 @@
         newPurchases: acc.newPurchases + d.newPurchases,
         renewals: acc.renewals + d.renewals,
         spend: acc.spend + d.spend,
-      }), { newPurchases: 0, renewals: 0, spend: 0 });
+        metaSpend: acc.metaSpend + d.metaSpend,
+        tiktokSpend: acc.tiktokSpend + d.tiktokSpend,
+      }), { newPurchases: 0, renewals: 0, spend: 0, metaSpend: 0, tiktokSpend: 0 });
 
       // Total header
       const totalTh = document.createElement('th');
@@ -1032,12 +1105,19 @@
       totalRenewalTd.style.fontWeight = '600';
       renewalRow.appendChild(totalRenewalTd);
 
-      // Total spend
-      const totalSpendTd = document.createElement('td');
-      totalSpendTd.textContent = '$' + totals.spend.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      totalSpendTd.style.color = 'white';
-      totalSpendTd.style.fontWeight = '600';
-      spendRow.appendChild(totalSpendTd);
+      // Total Meta spend
+      const totalMetaSpendTd = document.createElement('td');
+      totalMetaSpendTd.textContent = '$' + totals.metaSpend.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      totalMetaSpendTd.style.color = 'white';
+      totalMetaSpendTd.style.fontWeight = '600';
+      metaSpendRow.appendChild(totalMetaSpendTd);
+
+      // Total TikTok spend
+      const totalTikTokSpendTd = document.createElement('td');
+      totalTikTokSpendTd.textContent = '$' + totals.tiktokSpend.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      totalTikTokSpendTd.style.color = 'white';
+      totalTikTokSpendTd.style.fontWeight = '600';
+      tiktokSpendRow.appendChild(totalTikTokSpendTd);
 
       // Total net profit
       const totalNetProfit = totals.newPurchases + totals.renewals - totals.spend;
