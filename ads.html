@@ -834,11 +834,16 @@
     }
 
     async function fetchData(forceRefresh = false) {
-      const META_CACHE_KEY = `${APP_ID}_ads_cache`;
-      const TIKTOK_CACHE_KEY = `${APP_ID}_tiktok_ads_cache`;
-      const APPLE_CACHE_KEY = `${APP_ID}_apple_ads_cache`;
-      const SUPERWALL_CACHE_KEY = `${APP_ID}_superwall_cache`; // Shared across pages
+      const range = document.getElementById('time-range').value;
+      const META_CACHE_KEY = `${APP_ID}_ads_cache_${range}`;
+      const TIKTOK_CACHE_KEY = `${APP_ID}_tiktok_ads_cache_${range}`;
+      const APPLE_CACHE_KEY = `${APP_ID}_apple_ads_cache_${range}`;
+      const SUPERWALL_CACHE_KEY = `${APP_ID}_superwall_cache_${range}`;
       const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+
+      // Compute server-side time filter: current range start - 2 day buffer
+      const { start: rangeStart } = getTimeRange();
+      const fetchStart = new Date(rangeStart.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString();
 
       // Check cache first
       if (!forceRefresh) {
@@ -868,6 +873,8 @@
           }
         }
       }
+
+      showRefetchOverlay();
 
       const headers = {
         apikey: SUPABASE_ANON_KEY,
@@ -910,7 +917,7 @@
         // Fetch Meta ads data with needed metrics for an app
         const fetchAllMetaAdsForApp = async (appId) => {
           const allData = await fetchPaginated(
-            `${SUPABASE_URL}/rest/v1/meta_ads_hourly?select=${metaColumns}&app_id=eq.${appId}&order=hour_utc.asc`
+            `${SUPABASE_URL}/rest/v1/meta_ads_hourly?select=${metaColumns}&app_id=eq.${appId}&hour_utc=gte.${fetchStart}&order=hour_utc.asc`
           );
           return allData.map(row => ({ ...row, _platform: 'meta', reach: null, frequency: null, link_clicks: null }));
         };
@@ -918,7 +925,7 @@
         // Fetch TikTok ads data with needed metrics for an app
         const fetchAllTikTokAdsForApp = async (appId) => {
           const allData = await fetchPaginated(
-            `${SUPABASE_URL}/rest/v1/tiktok_ads_hourly?select=${tiktokColumns}&app_id=eq.${appId}&order=hour_utc.asc`
+            `${SUPABASE_URL}/rest/v1/tiktok_ads_hourly?select=${tiktokColumns}&app_id=eq.${appId}&hour_utc=gte.${fetchStart}&order=hour_utc.asc`
           );
           // Normalize TikTok fields to common schema
           return allData.map(row => ({
@@ -937,7 +944,7 @@
         // Fetch Apple ads data with needed metrics for an app
         const fetchAllAppleAdsForApp = async (appId) => {
           const allData = await fetchPaginated(
-            `${SUPABASE_URL}/rest/v1/apple_ads_hourly?select=${appleColumns}&app_id=eq.${appId}&order=hour_utc.asc`
+            `${SUPABASE_URL}/rest/v1/apple_ads_hourly?select=${appleColumns}&app_id=eq.${appId}&hour_utc=gte.${fetchStart}&order=hour_utc.asc`
           );
           // Normalize Apple fields to common schema
           return allData.map(row => ({
@@ -973,7 +980,7 @@
         // Fetch Superwall revenue data (for boost calculation) for an app
         const fetchAllSuperwallForApp = async (appId) => {
           return fetchPaginated(
-            `${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type&app_id=eq.${appId}&order=created_at.asc`
+            `${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type&app_id=eq.${appId}&created_at=gte.${fetchStart}&order=created_at.asc`
           );
         };
 
@@ -1022,7 +1029,9 @@
 
         updateSubtitle();
         render();
+        hideRefetchOverlay();
       } catch (err) {
+        hideRefetchOverlay();
         alert('Error fetching data: ' + err.message);
       }
     }

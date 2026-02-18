@@ -85,7 +85,10 @@ function handleTimeRangeChange() {
   }
 
   updateSubtitle();
-  if (typeof render === 'function') {
+  // Re-fetch with new time range filter (server-side filtering)
+  if (typeof fetchData === 'function') {
+    fetchData();
+  } else if (typeof render === 'function') {
     render();
   }
 }
@@ -282,6 +285,25 @@ function hideSkeletons() {
   const dashboard = document.getElementById('dashboard-content');
   if (dashboard) {
     dashboard.classList.remove('loading-content');
+  }
+}
+
+function showRefetchOverlay() {
+  let overlay = document.getElementById('refetch-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'refetch-overlay';
+    overlay.className = 'refetch-overlay';
+    overlay.innerHTML = '<div class="refetch-spinner"></div>';
+    document.body.appendChild(overlay);
+  }
+  overlay.classList.add('visible');
+}
+
+function hideRefetchOverlay() {
+  const overlay = document.getElementById('refetch-overlay');
+  if (overlay) {
+    overlay.classList.remove('visible');
   }
 }
 

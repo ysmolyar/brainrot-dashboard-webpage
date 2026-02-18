@@ -528,6 +528,36 @@ td.sticky-col {
   display: none;
 }
 
+/* Refetch loading overlay */
+.refetch-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  background: rgba(17, 24, 39, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  align-items: center;
+  justify-content: center;
+}
+.refetch-overlay.visible {
+  display: flex;
+}
+.refetch-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255,255,255,0.15);
+  border-top-color: rgba(255,255,255,0.8);
+  border-radius: 50%;
+  animation: refetch-spin 0.7s linear infinite;
+}
+@keyframes refetch-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Pull to refresh styles */
 .ptr-wrapper {
   position: relative;

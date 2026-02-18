@@ -428,10 +428,15 @@
     let showAllTransactions = false;
 
     async function fetchData(forceRefresh = false) {
-      const CACHE_KEY = `${APP_ID}_dashboard_cache`;
-      const SUPERWALL_CACHE_KEY = `${APP_ID}_superwall_cache`;
-      const TRANSACTIONS_CACHE_KEY = `${APP_ID}_transactions_cache`;
+      const range = document.getElementById('time-range').value;
+      const CACHE_KEY = `${APP_ID}_dashboard_cache_${range}`;
+      const SUPERWALL_CACHE_KEY = `${APP_ID}_superwall_cache_${range}`;
+      const TRANSACTIONS_CACHE_KEY = `${APP_ID}_transactions_cache_${range}`;
       const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+
+      // Compute server-side time filter: current range start - 2 day buffer
+      const { start: rangeStart } = getTimeRange();
+      const fetchStart = new Date(rangeStart.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString();
 
       // Check cache first
       if (!forceRefresh) {
@@ -458,11 +463,12 @@
         }
       }
 
+      showRefetchOverlay();
+
       const headers = {
         apikey: SUPABASE_ANON_KEY,
         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
       };
-
 
       // Determine which app IDs to fetch
       const appIds = APP.isCombined ? APP.apps : [APP_ID];
@@ -476,7 +482,7 @@
 
           while (true) {
             const res = await fetch(
-              `${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type,product_id&app_id=eq.${appId}&order=created_at.asc&limit=${limit}&offset=${offset}`,
+              `${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type,product_id&app_id=eq.${appId}&created_at=gte.${fetchStart}&order=created_at.asc&limit=${limit}&offset=${offset}`,
               { headers }
             );
             if (!res.ok) {
@@ -496,7 +502,7 @@
         // Fetch recent transactions with full data (including raw_payload)
         const fetchRecentTransactionsForApp = async (appId) => {
           const res = await fetch(
-            `${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type,user_id,product_id,is_refund,raw_payload,app_id&app_id=eq.${appId}&order=created_at.desc&limit=50`,
+            `${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type,user_id,product_id,is_refund,raw_payload,app_id&app_id=eq.${appId}&created_at=gte.${fetchStart}&order=created_at.desc&limit=50`,
             { headers }
           );
           if (!res.ok) return [];
@@ -511,7 +517,7 @@
 
           while (true) {
             const res = await fetch(
-              `${SUPABASE_URL}/rest/v1/${table}?select=hour_utc,spend&app_id=eq.${appId}&order=hour_utc.asc&limit=${limit}&offset=${offset}`,
+              `${SUPABASE_URL}/rest/v1/${table}?select=hour_utc,spend&app_id=eq.${appId}&hour_utc=gte.${fetchStart}&order=hour_utc.asc&limit=${limit}&offset=${offset}`,
               { headers }
             );
             if (!res.ok) {
@@ -573,7 +579,9 @@
 
         updateSubtitle();
         render();
+        hideRefetchOverlay();
       } catch (err) {
+        hideRefetchOverlay();
         alert('Error fetching data: ' + err.message);
       }
     }
