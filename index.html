@@ -289,6 +289,14 @@
               </div>
             </td>
           </tr>
+          <tr id="apple-spend-row">
+            <td class="sticky-col">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="display: inline-block; width: 12px; height: 12px; background: #60A5FA; border-radius: 2px;"></span>
+                <span>Apple Spend</span>
+              </div>
+            </td>
+          </tr>
           <tr id="net-profit-row" style="border-top: 1px solid #2A2D35;">
             <td class="sticky-col">
               <div style="display: flex; align-items: center; gap: 8px;">
@@ -455,8 +463,6 @@
         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
       };
 
-      // Calculate 180-day cutoff for time filter
-      const cutoffDate = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString();
 
       // Determine which app IDs to fetch
       const appIds = APP.isCombined ? APP.apps : [APP_ID];
@@ -470,10 +476,15 @@
 
           while (true) {
             const res = await fetch(
-              `${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type,product_id&app_id=eq.${appId}&created_at=gte.${cutoffDate}&order=created_at.asc&limit=${limit}&offset=${offset}`,
+              `${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type,product_id&app_id=eq.${appId}&order=created_at.asc&limit=${limit}&offset=${offset}`,
               { headers }
             );
+            if (!res.ok) {
+              console.error('Fetch error:', res.status, await res.text());
+              break;
+            }
             const data = await res.json();
+            if (!Array.isArray(data)) break;
             allData = allData.concat(data);
 
             if (data.length < limit) break;
@@ -488,41 +499,27 @@
             `${SUPABASE_URL}/rest/v1/superwall_events?select=created_at,proceeds,event_type,user_id,product_id,is_refund,raw_payload,app_id&app_id=eq.${appId}&order=created_at.desc&limit=50`,
             { headers }
           );
+          if (!res.ok) return [];
           return await res.json();
         };
 
-        // Fetch Meta ads data for app (with pagination)
-        const fetchMetaAdsForApp = async (appId) => {
+        // Generic paginated fetch for ads spend data (only hour_utc + spend)
+        const fetchAdsSpendForApp = async (table, appId) => {
           let allData = [];
           let offset = 0;
           const limit = 1000;
 
           while (true) {
             const res = await fetch(
-              `${SUPABASE_URL}/rest/v1/meta_ads_hourly?select=hour_utc,spend&app_id=eq.${appId}&order=hour_utc.asc&limit=${limit}&offset=${offset}`,
+              `${SUPABASE_URL}/rest/v1/${table}?select=hour_utc,spend&app_id=eq.${appId}&order=hour_utc.asc&limit=${limit}&offset=${offset}`,
               { headers }
             );
+            if (!res.ok) {
+              console.error('Fetch error:', res.status, await res.text());
+              break;
+            }
             const data = await res.json();
-            allData = allData.concat(data);
-
-            if (data.length < limit) break;
-            offset += limit;
-          }
-          return allData;
-        };
-
-        // Fetch TikTok ads data for app (with pagination)
-        const fetchTikTokAdsForApp = async (appId) => {
-          let allData = [];
-          let offset = 0;
-          const limit = 1000;
-
-          while (true) {
-            const res = await fetch(
-              `${SUPABASE_URL}/rest/v1/tiktok_ads_hourly?select=hour_utc,spend&app_id=eq.${appId}&order=hour_utc.asc&limit=${limit}&offset=${offset}`,
-              { headers }
-            );
-            const data = await res.json();
+            if (!Array.isArray(data)) break;
             allData = allData.concat(data);
 
             if (data.length < limit) break;
@@ -532,17 +529,19 @@
         };
 
         // Fetch all data for all apps in parallel
-        const [allMetaAdsData, allTikTokAdsData, allRevenueData, allTransactionsData] = await Promise.all([
-          Promise.all(appIds.map(fetchMetaAdsForApp)),
-          Promise.all(appIds.map(fetchTikTokAdsForApp)),
+        const [allMetaAdsData, allTikTokAdsData, allAppleAdsData, allRevenueData, allTransactionsData] = await Promise.all([
+          Promise.all(appIds.map(id => fetchAdsSpendForApp('meta_ads_hourly', id))),
+          Promise.all(appIds.map(id => fetchAdsSpendForApp('tiktok_ads_hourly', id))),
+          Promise.all(appIds.map(id => fetchAdsSpendForApp('apple_ads_hourly', id))),
           Promise.all(appIds.map(fetchChartRevenueForApp)),
           Promise.all(appIds.map(fetchRecentTransactionsForApp)),
         ]);
 
-        // Combine Meta + TikTok ads data (tagged with platform)
+        // Combine Meta + TikTok + Apple ads data (tagged with platform)
         adsData = [
           ...allMetaAdsData.flat().map(r => ({ ...r, _platform: 'meta' })),
           ...allTikTokAdsData.flat().map(r => ({ ...r, _platform: 'tiktok' })),
+          ...allAppleAdsData.flat().map(r => ({ ...r, _platform: 'apple' })),
         ];
         revenueData = allRevenueData.flat();
         // For transactions, combine and sort by date, then take top 50
@@ -555,19 +554,19 @@
         console.log('Transactions data rows fetched:', transactionsData.length);
 
         // Save ads data to its own cache (small)
-        localStorage.setItem(CACHE_KEY, JSON.stringify({
+        safeSetItem(CACHE_KEY, JSON.stringify({
           timestamp: Date.now(),
           adsData: adsData
         }));
 
         // Save lightweight Superwall data to shared cache (used by both pages)
-        localStorage.setItem(SUPERWALL_CACHE_KEY, JSON.stringify({
+        safeSetItem(SUPERWALL_CACHE_KEY, JSON.stringify({
           timestamp: Date.now(),
           data: revenueData
         }));
 
         // Save transactions data to separate cache
-        localStorage.setItem(TRANSACTIONS_CACHE_KEY, JSON.stringify({
+        safeSetItem(TRANSACTIONS_CACHE_KEY, JSON.stringify({
           timestamp: Date.now(),
           data: transactionsData
         }));
@@ -584,15 +583,17 @@
 
       const map = new Map();
 
-      // Aggregate ad spend (separate Meta vs TikTok)
+      // Aggregate ad spend (separate Meta vs TikTok vs Apple)
       (adsData || []).forEach(row => {
         const key = createBucketKey(row.hour_utc, start, end);
         if (key) {
-          const existing = map.get(key) || { bucket: key, spend: 0, metaSpend: 0, tiktokSpend: 0, newPurchases: 0, renewals: 0 };
+          const existing = map.get(key) || { bucket: key, spend: 0, metaSpend: 0, tiktokSpend: 0, appleSpend: 0, newPurchases: 0, renewals: 0 };
           const amount = parseFloat(row.spend) || 0;
           existing.spend += amount;
           if (row._platform === 'tiktok') {
             existing.tiktokSpend += amount;
+          } else if (row._platform === 'apple') {
+            existing.appleSpend += amount;
           } else {
             existing.metaSpend += amount;
           }
@@ -604,7 +605,7 @@
       (revenueData || []).forEach(row => {
         const key = createBucketKey(row.created_at, start, end);
         if (key) {
-          const existing = map.get(key) || { bucket: key, spend: 0, metaSpend: 0, tiktokSpend: 0, newPurchases: 0, renewals: 0 };
+          const existing = map.get(key) || { bucket: key, spend: 0, metaSpend: 0, tiktokSpend: 0, appleSpend: 0, newPurchases: 0, renewals: 0 };
           const proceeds = parseFloat(row.proceeds) || 0;
 
           if (row.event_type === 'renewal') {
@@ -677,6 +678,9 @@
       document.querySelectorAll('#tiktok-spend-row td:not(.sticky-col)').forEach(td => {
         td.style.color = showSpend ? 'white' : '#6B7280';
       });
+      document.querySelectorAll('#apple-spend-row td:not(.sticky-col)').forEach(td => {
+        td.style.color = showSpend ? 'white' : '#6B7280';
+      });
 
       const labels = processedData.map(d => formatBucketLabel(d.bucket));
       const datasets = [];
@@ -737,10 +741,22 @@
           pointRadius: 0,
           order: 2,
         };
+        // Apple Spend: stacked on top of TikTok (data = meta + tiktok + apple, fill between this and TikTok)
+        datasetMap[4] = {
+          label: 'Apple Spend',
+          data: processedData.map(d => d.metaSpend + d.tiktokSpend + d.appleSpend),
+          borderColor: '#60A5FA',
+          backgroundColor: 'rgba(59, 130, 246, 0.7)',
+          borderWidth: 2,
+          fill: '-1',
+          tension: 0,
+          pointRadius: 0,
+          order: 2,
+        };
       }
 
-      // Add datasets in index order to ensure New, Renewal, Meta Spend, TikTok Spend order
-      for (let i = 0; i < 4; i++) {
+      // Add datasets in index order to ensure New, Renewal, Meta Spend, TikTok Spend, Apple Spend order
+      for (let i = 0; i < 5; i++) {
         if (datasetMap[i]) {
           datasets.push(datasetMap[i]);
         }
@@ -843,6 +859,7 @@
                     const renewalItem = items.find(item => item.dataset.label === 'Renewal');
                     const metaSpendItem = items.find(item => item.dataset.label === 'Meta Spend');
                     const tiktokSpendItem = items.find(item => item.dataset.label === 'TikTok Spend');
+                    const appleSpendItem = items.find(item => item.dataset.label === 'Apple Spend');
 
                     // Net Profit
                     const netProfit = grossProceeds - data.spend;
@@ -858,7 +875,7 @@
                     if (renewalItem) {
                       innerHtml += `<tr><td><span style="color: #22D3D3;">●</span> Renewal</td><td style="text-align: right; padding-left: 16px; color: ${numColor};">$${renewalItem.raw.toFixed(2)}</td></tr>`;
                     }
-                    if (metaSpendItem || tiktokSpendItem) {
+                    if (metaSpendItem || tiktokSpendItem || appleSpendItem) {
                       innerHtml += `<tr><td>Ad Spend</td><td style="text-align: right; padding-left: 16px; color: ${numColor};">$${data.spend.toFixed(2)}</td></tr>`;
                     }
                     if (metaSpendItem && data.metaSpend > 0) {
@@ -866,6 +883,9 @@
                     }
                     if (tiktokSpendItem && data.tiktokSpend > 0) {
                       innerHtml += `<tr><td><span style="color: #F97316;">●</span> TikTok</td><td style="text-align: right; padding-left: 16px; color: ${numColor};">$${data.tiktokSpend.toFixed(2)}</td></tr>`;
+                    }
+                    if (appleSpendItem && data.appleSpend > 0) {
+                      innerHtml += `<tr><td><span style="color: #60A5FA;">●</span> Apple</td><td style="text-align: right; padding-left: 16px; color: ${numColor};">$${data.appleSpend.toFixed(2)}</td></tr>`;
                     }
                     innerHtml += `<tr style="margin-top: 6px;"><td>Net Profit</td><td style="text-align: right; padding-left: 16px; color: ${netProfitColor};">$${netProfit.toFixed(2)}</td></tr>`;
                     innerHtml += `</table>`;
@@ -1002,6 +1022,7 @@
       const renewalRow = document.getElementById('renewal-row');
       const metaSpendRow = document.getElementById('meta-spend-row');
       const tiktokSpendRow = document.getElementById('tiktok-spend-row');
+      const appleSpendRow = document.getElementById('apple-spend-row');
       const netProfitRow = document.getElementById('net-profit-row');
 
       // Clear existing data cells (keep first sticky column)
@@ -1010,6 +1031,7 @@
       while (renewalRow.children.length > 1) renewalRow.removeChild(renewalRow.lastChild);
       while (metaSpendRow.children.length > 1) metaSpendRow.removeChild(metaSpendRow.lastChild);
       while (tiktokSpendRow.children.length > 1) tiktokSpendRow.removeChild(tiktokSpendRow.lastChild);
+      while (appleSpendRow.children.length > 1) appleSpendRow.removeChild(appleSpendRow.lastChild);
       while (netProfitRow.children.length > 1) netProfitRow.removeChild(netProfitRow.lastChild);
 
       // Add data columns for each time period
@@ -1068,6 +1090,12 @@
         tiktokSpendTd.style.color = 'white';
         tiktokSpendRow.appendChild(tiktokSpendTd);
 
+        // Apple Spend
+        const appleSpendTd = document.createElement('td');
+        appleSpendTd.textContent = '$' + row.appleSpend.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        appleSpendTd.style.color = 'white';
+        appleSpendRow.appendChild(appleSpendTd);
+
         // Net Profit
         const netProfit = row.newPurchases + row.renewals - row.spend;
         const netProfitTd = document.createElement('td');
@@ -1083,7 +1111,8 @@
         spend: acc.spend + d.spend,
         metaSpend: acc.metaSpend + d.metaSpend,
         tiktokSpend: acc.tiktokSpend + d.tiktokSpend,
-      }), { newPurchases: 0, renewals: 0, spend: 0, metaSpend: 0, tiktokSpend: 0 });
+        appleSpend: acc.appleSpend + d.appleSpend,
+      }), { newPurchases: 0, renewals: 0, spend: 0, metaSpend: 0, tiktokSpend: 0, appleSpend: 0 });
 
       // Total header
       const totalTh = document.createElement('th');
@@ -1118,6 +1147,13 @@
       totalTikTokSpendTd.style.color = 'white';
       totalTikTokSpendTd.style.fontWeight = '600';
       tiktokSpendRow.appendChild(totalTikTokSpendTd);
+
+      // Total Apple spend
+      const totalAppleSpendTd = document.createElement('td');
+      totalAppleSpendTd.textContent = '$' + totals.appleSpend.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      totalAppleSpendTd.style.color = 'white';
+      totalAppleSpendTd.style.fontWeight = '600';
+      appleSpendRow.appendChild(totalAppleSpendTd);
 
       // Total net profit
       const totalNetProfit = totals.newPurchases + totals.renewals - totals.spend;

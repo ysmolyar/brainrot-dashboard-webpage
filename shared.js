@@ -409,6 +409,33 @@ function initPullToRefresh() {
   }, { passive: true });
 }
 
+// ============================================
+// Safe localStorage (handles quota errors)
+// ============================================
+
+function safeSetItem(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch (e) {
+    if (e.name === 'QuotaExceededError' || e.code === 22) {
+      // Clear all data caches and retry
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (k.endsWith('_cache') || k.endsWith('_ads_cache'))) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+      try {
+        localStorage.setItem(key, value);
+      } catch (e2) {
+        console.warn('localStorage quota exceeded, skipping cache for', key);
+      }
+    }
+  }
+}
+
 // Initialize pull to refresh when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initPullToRefresh);
