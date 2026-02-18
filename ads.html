@@ -1392,6 +1392,7 @@
         return rowDate >= start && rowDate <= end;
       });
 
+
       // Sort by hour descending (most recent first)
       filteredAds.sort((a, b) => new Date(b.hour_utc) - new Date(a.hour_utc));
 
@@ -1783,43 +1784,59 @@
           };
         });
       } else {
-        // Hourly data - no aggregation needed
-        chartData = chartAds.map(row => {
-          const spend = parseFloat(row.spend) || 0;
-          const impressions = parseInt(row.impressions) || 0;
-          const clicks = parseInt(row.clicks) || 0;
-          const conversions = parseFloat(row.conversions) || 0;
-          const conversionValue = parseFloat(row.conversion_value) || 0;
-          const linkClicks = parseInt(row.link_clicks) || 0;
-          const appInstalls = parseInt(row.app_installs) || 0;
+        // Hourly data - aggregate by hour bucket (multiple platforms per hour)
+        const hourlyMap = new Map();
+        chartAds.forEach(row => {
+          const hourKey = row.hour_utc.slice(0, 13); // "2025-01-15T08"
 
-          // Calculate Superwall proceeds for this hour
-          const swProceeds = calculateSuperwallProceedsForHour(row.hour_utc);
+          if (!hourlyMap.has(hourKey)) {
+            hourlyMap.set(hourKey, {
+              hour: row.hour_utc,
+              spend: 0,
+              impressions: 0,
+              clicks: 0,
+              conversions: 0,
+              conversion_value: 0,
+              link_clicks: 0,
+              app_installs: 0
+            });
+          }
 
-          // Calculate boost factor and real CPA for this hour
-          const hourCpa = conversions > 0 ? spend / conversions : 0;
-          const hourBoostFactor = conversionValue > 0 ? swProceeds.newProceeds / conversionValue : 1;
+          const bucket = hourlyMap.get(hourKey);
+          bucket.spend += parseFloat(row.spend) || 0;
+          bucket.impressions += parseInt(row.impressions) || 0;
+          bucket.clicks += parseInt(row.clicks) || 0;
+          bucket.conversions += parseFloat(row.conversions) || 0;
+          bucket.conversion_value += parseFloat(row.conversion_value) || 0;
+          bucket.link_clicks += parseInt(row.link_clicks) || 0;
+          bucket.app_installs += parseInt(row.app_installs) || 0;
+        });
+
+        chartData = Array.from(hourlyMap.values()).map(h => {
+          const swProceeds = calculateSuperwallProceedsForHour(h.hour);
+          const hourCpa = h.conversions > 0 ? h.spend / h.conversions : 0;
+          const hourBoostFactor = h.conversion_value > 0 ? swProceeds.newProceeds / h.conversion_value : 1;
           const hourRealCpa = hourBoostFactor > 1 ? hourCpa / hourBoostFactor : hourCpa;
 
           return {
-            hour: row.hour_utc,
-            spend: spend,
-            cpm: impressions > 0 ? (spend / impressions) * 1000 : 0,
-            cpc: clicks > 0 ? spend / clicks : 0,
-            ctr: impressions > 0 ? (clicks / impressions) * 100 : 0,
+            hour: h.hour,
+            spend: h.spend,
+            cpm: h.impressions > 0 ? (h.spend / h.impressions) * 1000 : 0,
+            cpc: h.clicks > 0 ? h.spend / h.clicks : 0,
+            ctr: h.impressions > 0 ? (h.clicks / h.impressions) * 100 : 0,
             cpa: hourCpa,
-            conversions: conversions,
-            conversion_value: conversionValue,
-            purchase_roas: spend > 0 ? conversionValue / spend : 0,
-            appstore_conv: linkClicks > 0 ? (appInstalls / linkClicks) * 100 : 0,
-            onboarding_conv: appInstalls > 0 ? (conversions / appInstalls) * 100 : 0,
-            impressions: impressions,
-            clicks: clicks,
-            app_installs: appInstalls,
+            conversions: h.conversions,
+            conversion_value: h.conversion_value,
+            purchase_roas: h.spend > 0 ? h.conversion_value / h.spend : 0,
+            appstore_conv: h.link_clicks > 0 ? (h.app_installs / h.link_clicks) * 100 : 0,
+            onboarding_conv: h.app_installs > 0 ? (h.conversions / h.app_installs) * 100 : 0,
+            impressions: h.impressions,
+            clicks: h.clicks,
+            app_installs: h.app_installs,
             sw_new_proceeds: swProceeds.newProceeds,
             sw_renewal_proceeds: swProceeds.renewalProceeds,
             sw_total_proceeds: swProceeds.totalProceeds,
-            real_roas: spend > 0 ? swProceeds.newProceeds / spend : 0,
+            real_roas: h.spend > 0 ? swProceeds.newProceeds / h.spend : 0,
             real_cpa: hourRealCpa
           };
         });
